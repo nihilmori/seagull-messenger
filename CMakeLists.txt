@@ -22,9 +22,10 @@ include_directories(src)
 
 add_library(
     ${PROJECT_NAME}_objs OBJECT
-    src/greeting.cpp #
-    src/hello.cpp #
-    src/hello_postgres.cpp
+    src/register_handler.cpp
+    src/login_handler.cpp
+    src/send_message_handler.cpp
+    src/get_messages_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs

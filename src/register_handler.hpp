@@ -2,17 +2,17 @@
 
 #include <userver/components/component.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
-
 #include <userver/storages/postgres/cluster.hpp>
 
 namespace myservice {
 
-class HelloPostgres final : public userver::server::handlers::HttpHandlerBase {
+class RegisterHandler final
+    : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-hello-postgres";
+  static constexpr std::string_view kName = "handler-register";
 
-  HelloPostgres(const userver::components::ComponentConfig&,
-                const userver::components::ComponentContext&);
+  RegisterHandler(const userver::components::ComponentConfig&,
+                  const userver::components::ComponentContext&);
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest&,
