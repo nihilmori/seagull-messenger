@@ -7,4 +7,4 @@ is-testing: false
 server-port: 8080
 
 # change to URI of your postgres database
-pg-connection: postgresql://parallels@localhost:5432/myservice_db_1
+pg-connection: postgresql://parallels:StrongPass123@127.0.0.1:5432/myservice_db_1

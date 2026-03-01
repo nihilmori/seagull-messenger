@@ -1,4 +1,7 @@
 #include <login_handler.hpp>
+#include <utils_handler.hpp>
+
+#include <string_view>
 
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
@@ -21,18 +24,44 @@ std::string LoginHandler::HandleRequestThrow(
   auto& response = request.GetHttpResponse();
   response.SetContentType("application/json");
 
-  const auto body = userver::formats::json::FromString(request.RequestBody());
+  userver::formats::json::Value body;
+  try {
+    body = userver::formats::json::FromString(request.RequestBody());
+  } catch (const std::exception&) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("Invalid JSON body");
+  }
+
   const auto login = body["login"].As<std::string>("");
   const auto password_hash = body["password_hash"].As<std::string>("");
 
+  if (utils_handler::IsBlank(login)) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("Field 'login' is required");
+  }
+
+  if (utils_handler::IsBlank(password_hash)) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("Field 'password_hash' is required");
+  }
+
   const auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kMaster,
-      "SELECT user_id FROM seagull_schema.users WHERE login = $1 AND password_hash = $2",
+      "SELECT user_id, login, name FROM seagull_schema.users WHERE login = $1 "
+      "AND password_hash = $2",
       login, password_hash);
-  userver::formats::json::ValueBuilder resp;
-  if (!result.IsEmpty()) {
-    resp["user_id"] = result[0]["user_id"].As<int>();
+
+  if (result.IsEmpty()) {
+    response.SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+    return utils_handler::MakeErrorJson("Invalid login or password_hash");
   }
+
+  userver::formats::json::ValueBuilder resp;
+  resp["user_id"] = result[0]["user_id"].As<int>();
+  resp["login"] = result[0]["login"].As<std::string>();
+  resp["name"] = result[0]["name"].As<std::string>();
+
+  response.SetStatus(userver::server::http::HttpStatus::kOk);
   return userver::formats::json::ToString(resp.ExtractValue());
 }
 

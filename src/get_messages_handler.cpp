@@ -1,4 +1,7 @@
 #include <get_messages_handler.hpp>
+#include <utils_handler.hpp>
+
+#include <utility>
 
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
@@ -24,31 +27,71 @@ std::string GetMessagesHandler::HandleRequestThrow(
   const auto& chat_id_str = request.GetArg("chat_id");
   if (chat_id_str.empty()) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    userver::formats::json::ValueBuilder result;
-    result["error"] = "chat_id is required";
-    return userver::formats::json::ToString(result.ExtractValue());
+    return utils_handler::MakeErrorJson("chat_id is required");
   }
 
-  const auto chat_id = std::stoi(chat_id_str);
+  int chat_id = 0;
+  if (!utils_handler::TryParseInt(chat_id_str, chat_id) || chat_id < 0) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "chat_id must be a non-negative integer");
+  }
 
-  // Базовое получение сообщений
+  constexpr int kDefaultLimit = 50;
+  constexpr int kMaxLimit = 200;
+
+  int limit = kDefaultLimit;
+  const auto& limit_arg = request.GetArg("limit");
+  if (!limit_arg.empty()) {
+    if (!utils_handler::TryParseInt(limit_arg, limit) || limit <= 0 ||
+        limit > kMaxLimit) {
+      response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return utils_handler::MakeErrorJson(
+          "limit must be an integer in range [1, " + std::to_string(kMaxLimit) +
+          "]");
+    }
+  }
+
+  int offset = 0;
+  const auto& offset_arg = request.GetArg("offset");
+  if (!offset_arg.empty()) {
+    if (!utils_handler::TryParseInt(offset_arg, offset) || offset < 0) {
+      response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return utils_handler::MakeErrorJson(
+          "offset must be a non-negative integer");
+    }
+  }
+
   const auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
-      "SELECT m.message_id, m.content, a.sender_id, a.chat_id FROM seagull_schema.actions a JOIN seagull_schema.messages m ON a.message_id = m.message_id WHERE a.chat_id = $1 ORDER BY m.message_id ASC",
-      chat_id);
-  userver::formats::json::ValueBuilder messages(userver::formats::common::Type::kArray);
+      "SELECT m.message_id, m.content, a.sender_id, a.chat_id, "
+      "to_char(m.sent_at AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY "
+      "HH24:MI:SS') AS sent_at "
+      "FROM seagull_schema.actions a JOIN seagull_schema.messages m ON "
+      "a.message_id = m.message_id "
+      "WHERE a.chat_id = $1 ORDER BY m.message_id ASC "
+      "LIMIT $2 OFFSET $3",
+      chat_id, limit, offset);
+
+  userver::formats::json::ValueBuilder messages(
+      userver::formats::common::Type::kArray);
   for (const auto& row : result) {
     userver::formats::json::ValueBuilder msg;
     msg["message_id"] = row["message_id"].As<int>();
     msg["content"] = row["content"].As<std::string>();
     msg["sender_id"] = row["sender_id"].As<int>();
     msg["chat_id"] = row["chat_id"].As<int>();
+    msg["sent_at"] = row["sent_at"].As<std::string>();
     messages.PushBack(std::move(msg));
   }
-  return userver::formats::json::ToString(messages.ExtractValue());
 
   userver::formats::json::ValueBuilder resp;
+  resp["chat_id"] = chat_id;
+  resp["limit"] = limit;
+  resp["offset"] = offset;
   resp["messages"] = std::move(messages);
+
+  response.SetStatus(userver::server::http::HttpStatus::kOk);
   return userver::formats::json::ToString(resp.ExtractValue());
 }
 

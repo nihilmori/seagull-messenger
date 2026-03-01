@@ -34,6 +34,11 @@ $(addprefix test-, $(PRESETS)): test-%: build-%/CMakeCache.txt
 $(addprefix start-, $(PRESETS)): start-%:
 	cmake --build build-$* -v --target start-$(PROJECT_NAME)
 
+# Run the service binary directly (without testsuite)
+.PHONY: $(addprefix run-, $(PRESETS))
+$(addprefix run-, $(PRESETS)): run-%: build-%
+	./build-$*/$(PROJECT_NAME) --config ./configs/static_config.yaml --config_vars ./configs/config_vars.yaml
+
 # Cleanup data
 .PHONY: $(addprefix clean-, $(PRESETS))
 $(addprefix clean-, $(PRESETS)): clean-%:

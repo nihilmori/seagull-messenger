@@ -22,6 +22,7 @@ include_directories(src)
 
 add_library(
     ${PROJECT_NAME}_objs OBJECT
+    src/utils_handler.cpp
     src/register_handler.cpp
     src/login_handler.cpp
     src/send_message_handler.cpp
