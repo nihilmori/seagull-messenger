@@ -4,6 +4,7 @@
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/crypto/hash.hpp>
 
 namespace myservice {
 
@@ -31,8 +32,8 @@ std::string RegisterHandler::HandleRequestThrow(
   }
 
   const auto login = body["login"].As<std::string>("");
-  const auto password_hash = body["password_hash"].As<std::string>(
-      "");  // TODO: сделать адекватное взятие пароля и его хеширование
+  const auto password = body["password"].As<std::string>(
+      "");
   const auto name = body["name"].As<std::string>("");
 
   if (utils_handler::IsBlank(login)) {
@@ -40,15 +41,20 @@ std::string RegisterHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'login' is required");
   }
 
-  if (utils_handler::IsBlank(password_hash)) {
+  if (!utils_handler::IsCorrectPassword(password)) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    return utils_handler::MakeErrorJson("Field 'password_hash' is required");
+    return utils_handler::MakeErrorJson("Field 'password' is not correct");
   }
 
   if (utils_handler::IsBlank(name)) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("Field 'name' is required");
   }
+
+  auto password_hash = userver::crypto::hash::Sha256(
+    password, 
+    userver::crypto::hash::OutputEncoding::kBase64
+  );
 
   const auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kMaster,
