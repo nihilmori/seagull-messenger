@@ -7,6 +7,7 @@
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/storages/postgres/transaction.hpp>
 
 namespace myservice {
 
@@ -62,30 +63,39 @@ std::string SendMessageHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Sender user not found");
   }
 
-  const auto msg_result = pg_cluster_->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "INSERT INTO seagull_schema.messages(content) VALUES($1) "
-      "RETURNING message_id, content, to_char(sent_at AT TIME ZONE "
-      "'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS')",
-      content);
+  auto transaction =
+      pg_cluster_->Begin(userver::storages::postgres::ClusterHostType::kMaster);
 
-  const auto [message_id, stored_content, sent_at] =
-      msg_result.AsSingleRow<std::tuple<int, std::string, std::string>>();
+  try {
+    const auto msg_result = transaction.Execute(
+        "INSERT INTO seagull_schema.messages(content) VALUES($1) "
+        "RETURNING message_id, content, to_char(sent_at AT TIME ZONE "
+        "'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS')",
+        content);
 
-  pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "INSERT INTO seagull_schema.actions(sender_id, "
-                       "message_id, chat_id) VALUES($1, $2, $3)",
-                       sender_id, message_id, chat_id);
+    const auto [message_id, stored_content, sent_at] =
+        msg_result.AsSingleRow<std::tuple<int, std::string, std::string>>();
 
-  userver::formats::json::ValueBuilder resp;
-  resp["message_id"] = message_id;
-  resp["sender_id"] = sender_id;
-  resp["chat_id"] = chat_id;
-  resp["content"] = stored_content;
-  resp["sent_at"] = sent_at;
+    transaction.Execute(
+        "INSERT INTO seagull_schema.actions(sender_id, "
+        "message_id, chat_id) VALUES($1, $2, $3)",
+        sender_id, message_id, chat_id);
 
-  response.SetStatus(userver::server::http::HttpStatus::kCreated);
-  return userver::formats::json::ToString(resp.ExtractValue());
+    transaction.Commit();
+
+    userver::formats::json::ValueBuilder resp;
+    resp["message_id"] = message_id;
+    resp["sender_id"] = sender_id;
+    resp["chat_id"] = chat_id;
+    resp["content"] = stored_content;
+    resp["sent_at"] = sent_at;
+
+    response.SetStatus(userver::server::http::HttpStatus::kCreated);
+    return userver::formats::json::ToString(resp.ExtractValue());
+  } catch (const std::exception& e) {
+    transaction.Rollback();
+    return utils_handler::MakeErrorJson("Failed to send message");
+  }
 }
 
 }  // namespace myservice
