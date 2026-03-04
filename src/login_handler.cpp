@@ -46,13 +46,25 @@ std::string LoginHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'password' is required");
   }
 
+  const auto salt_result = pg_cluster_->Execute(
+      userver::storages::postgres::ClusterHostType::kSlave,
+      "SELECT salt FROM seagull_schema.users WHERE login = $1",
+      login);
+
+  if (salt_result.IsEmpty()) {
+    response.SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+    return utils_handler::MakeErrorJson("Invalid login or password");
+  }
+
+  const auto salt = salt_result[0]["salt"].As<std::string>();
+
   auto password_hash = userver::crypto::hash::Sha256(
-    password,
+    salt + password,
     userver::crypto::hash::OutputEncoding::kBase64
   );
 
   const auto result = pg_cluster_->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
+      userver::storages::postgres::ClusterHostType::kSlave,
       "SELECT user_id, login, name FROM seagull_schema.users WHERE login = $1 "
       "AND password_hash = $2",
       login, password_hash);

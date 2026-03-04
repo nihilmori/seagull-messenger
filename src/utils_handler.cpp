@@ -1,6 +1,7 @@
 #include <utils_handler.hpp>
 
 #include <string>
+#include <random>
 
 #include <userver/formats/json.hpp>
 
@@ -66,6 +67,24 @@ bool TryParseInt(std::string_view source, int& out_value) {
   } catch (const std::exception&) {
     return false;
   }
+}
+
+std::string GenerateSalt(std::size_t length) {
+  static constexpr std::string_view kChars =
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "0123456789";
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<std::size_t> dist(0, kChars.size() - 1);
+
+  std::string salt;
+  salt.reserve(length);
+  for (std::size_t i = 0; i < length; ++i) {
+    salt += kChars[dist(gen)];
+  }
+  return salt;
 }
 
 }  // namespace myservice::utils_handler

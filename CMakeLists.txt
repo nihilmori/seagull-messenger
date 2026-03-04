@@ -11,13 +11,13 @@ find_package(
     QUIET
 )
 if(NOT userver_FOUND)
-    # Tries TRY_DIR first, falls back to downloading userver from GitHub using CPM.
+#Tries TRY_DIR first, falls back to downloading userver from GitHub using CPM.
     download_userver(TRY_DIR third_party/userver)
 endif()
 
 userver_setup_environment()
 
-# Common sources
+#Common sources
 include_directories(src)
 
 add_library(
@@ -34,25 +34,24 @@ target_link_libraries(
            userver::postgresql
 )
 
-
-# The Service
+#The Service
 add_executable(${PROJECT_NAME} src/main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_objs)
 
-# Unit Tests
+#Unit Tests
 add_executable(${PROJECT_NAME}_unittest src/greeting_test.cpp)
 target_link_libraries(${PROJECT_NAME}_unittest PRIVATE ${PROJECT_NAME}_objs userver::utest)
 add_google_tests(${PROJECT_NAME}_unittest)
 
-# Benchmarks
+#Benchmarks
 add_executable(${PROJECT_NAME}_benchmark src/greeting_benchmark.cpp)
 target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver::ubench)
 add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
-# Functional testing
+#Functional testing
 userver_testsuite_add_simple()
 
-# Install
+#Install
 include(GNUInstallDirs)
 
 if(DEFINED ENV{PREFIX})
