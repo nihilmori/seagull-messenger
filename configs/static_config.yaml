@@ -80,6 +80,16 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-get-chats:
+            path: /api/chats
+            method: GET
+            task_processor: main-task-processor
+
+        handler-create-group-chat:
+            path: /api/chats/group
+            method: POST
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION

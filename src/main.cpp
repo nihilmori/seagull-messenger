@@ -30,7 +30,9 @@ int main(int argc, char* argv[]) {
           .Append<myservice::RegisterHandler>()
           .Append<myservice::LoginHandler>()
           .Append<myservice::SendMessageHandler>()
-          .Append<myservice::GetMessagesHandler>();
+          .Append<myservice::GetMessagesHandler>()
+	  .Append<myservice::GetChatsHandler>()
+          .Append<myservice::CreateGroupChatHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

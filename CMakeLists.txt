@@ -8,6 +8,7 @@ find_package(
     userver
     COMPONENTS core #
                postgresql
+	       crypto
     QUIET
 )
 if(NOT userver_FOUND)
@@ -27,11 +28,14 @@ add_library(
     src/login_handler.cpp
     src/send_message_handler.cpp
     src/get_messages_handler.cpp
+    src/get_chats_handler.cpp
+    src/create_group_chat_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs
     PUBLIC userver::core #
            userver::postgresql
+	   userver::crypto
 )
 
 #The Service
