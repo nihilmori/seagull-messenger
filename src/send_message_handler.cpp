@@ -1,9 +1,9 @@
 #include <send_message_handler.hpp>
 #include <utils_handler.hpp>
 
+#include <algorithm>
 #include <tuple>
 #include <vector>
-#include <algorithm>
 
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
@@ -52,7 +52,7 @@ std::string SendMessageHandler::HandleRequestThrow(
   }
 
   bool is_private_chat = (chat_id == 0);
-  
+
   if (is_private_chat) {
     if (receiver_id <= 0) {
       response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
@@ -80,7 +80,8 @@ std::string SendMessageHandler::HandleRequestThrow(
   if (is_private_chat) {
     const auto receiver_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT user_id FROM seagull_schema.users WHERE user_id = $1", receiver_id);
+        "SELECT user_id FROM seagull_schema.users WHERE user_id = $1",
+        receiver_id);
 
     if (receiver_result.IsEmpty()) {
       response.SetStatus(userver::server::http::HttpStatus::kNotFound);
@@ -106,9 +107,9 @@ std::string SendMessageHandler::HandleRequestThrow(
           sender_id, receiver_id);
 
       if (chat_result.IsEmpty()) {
-        std::string chat_name = "private_" + std::to_string(sender_id) + 
-                                "_" + std::to_string(receiver_id);
-        
+        std::string chat_name = "private_" + std::to_string(sender_id) + "_" +
+                                std::to_string(receiver_id);
+
         auto new_chat = transaction.Execute(
             "INSERT INTO seagull_schema.chats (name, type) "
             "VALUES ($1, 1) RETURNING chat_id",
@@ -133,7 +134,8 @@ std::string SendMessageHandler::HandleRequestThrow(
       if (participant_check.IsEmpty()) {
         transaction.Rollback();
         response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-        return utils_handler::MakeErrorJson("Sender is not a participant of this chat");
+        return utils_handler::MakeErrorJson(
+            "Sender is not a participant of this chat");
       }
     }
 
