@@ -95,6 +95,11 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-get-user-profile:
+            path: /api/user/profile
+            method: GET
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION

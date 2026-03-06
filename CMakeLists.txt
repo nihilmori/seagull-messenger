@@ -29,6 +29,7 @@ add_library(
     src/send_message_handler.cpp
     src/get_messages_handler.cpp
     src/get_chats_handler.cpp
+    src/get_user_profile_handler.cpp
     src/create_group_chat_handler.cpp
     src/search_users_handler.cpp
 )
