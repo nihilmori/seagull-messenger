@@ -32,6 +32,7 @@ add_library(
     src/get_user_profile_handler.cpp
     src/create_group_chat_handler.cpp
     src/search_users_handler.cpp
+    src/get_chat_info_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs

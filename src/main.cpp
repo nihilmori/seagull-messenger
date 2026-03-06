@@ -21,6 +21,7 @@
 #include <get_user_profile_handler.hpp>
 #include <create_group_chat_handler.hpp>
 #include <search_users_handler.hpp>
+#include <get_chat_info_handler.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
@@ -39,7 +40,8 @@ int main(int argc, char* argv[]) {
 	  .Append<myservice::GetChatsHandler>()
           .Append<myservice::CreateGroupChatHandler>()
 	  .Append<myservice::SearchUsersHandler>()
-	  .Append<myservice::GetUserProfileHandler>();
+	  .Append<myservice::GetUserProfileHandler>()
+	  .Append<myservice::GetChatInfoHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }
