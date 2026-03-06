@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS seagull_schema.users (
     password_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
     name VARCHAR(100) NOT NULL,
-    bio TEXT
+    bio VARCHAR(80)
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.messages (
