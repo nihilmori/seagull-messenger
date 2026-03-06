@@ -90,6 +90,11 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        handler-search-users:
+            path: /api/users/search
+            method: GET
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION

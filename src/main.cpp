@@ -16,6 +16,10 @@
 #include <login_handler.hpp>
 #include <register_handler.hpp>
 #include <send_message_handler.hpp>
+#include <get_messages_handler.hpp>
+#include <get_chats_handler.hpp>
+#include <greate_group_chat_handler.hpp>
+#include <search_users_handler.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
@@ -32,7 +36,8 @@ int main(int argc, char* argv[]) {
           .Append<myservice::SendMessageHandler>()
           .Append<myservice::GetMessagesHandler>()
 	  .Append<myservice::GetChatsHandler>()
-          .Append<myservice::CreateGroupChatHandler>();
+          .Append<myservice::CreateGroupChatHandler>()
+	  .Append<myservice::SearchUsersHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }
