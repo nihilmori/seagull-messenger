@@ -33,8 +33,7 @@ std::string GetChatsHandler::HandleRequestThrow(
   int user_id = 0;
   if (!utils_handler::TryParseInt(user_id_str, user_id) || user_id <= 0) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    return utils_handler::MakeErrorJson(
-        "user_id must be a positive integer");
+    return utils_handler::MakeErrorJson("user_id must be a positive integer");
   }
 
   constexpr int kDefaultLimit = 50;
@@ -62,12 +61,11 @@ std::string GetChatsHandler::HandleRequestThrow(
     }
   }
 
-try {
+  try {
     auto user_check = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT user_id FROM seagull_schema.users WHERE user_id = $1",
-        user_id);
-    
+        "SELECT user_id FROM seagull_schema.users WHERE user_id = $1", user_id);
+
     if (user_check.IsEmpty()) {
       response.SetStatus(userver::server::http::HttpStatus::kNotFound);
       return utils_handler::MakeErrorJson("User not found");
@@ -75,15 +73,18 @@ try {
 
     const auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT c.chat_id, c.name "
+        "SELECT c.chat_id, c.name, "
+        "to_char(MAX(m.sent_at) AT TIME ZONE 'Europe/Moscow', "
+        "'DD.MM.YYYY HH24:MI:SS') AS last_message_at "
         "FROM seagull_schema.chats c "
-        "WHERE c.chat_id IN ("
-        "  SELECT chat_id "
-        "  FROM seagull_schema.chat_users "
-        "  WHERE user_id = $1"
-        ") "
+        "JOIN seagull_schema.chat_users cu ON cu.chat_id = c.chat_id "
+        "LEFT JOIN seagull_schema.actions a ON a.chat_id = c.chat_id "
+        "LEFT JOIN seagull_schema.messages m ON m.message_id = a.message_id "
+        "WHERE cu.user_id = $1 "
+        "GROUP BY c.chat_id, c.name "
+        "ORDER BY MAX(m.sent_at) DESC NULLS LAST, c.chat_id DESC "
         "LIMIT $2 OFFSET $3",
-        user_id, limit, offset); //TODO: тут нужно добавить сортировку чатов по последнему сообщению
+        user_id, limit, offset);
 
     userver::formats::json::ValueBuilder chats(
         userver::formats::common::Type::kArray);
@@ -91,7 +92,8 @@ try {
     for (const auto& row : result) {
       userver::formats::json::ValueBuilder chat;
       chat["chat_id"] = row["chat_id"].As<int>();
-      chat["name"] = row["name"].As<std::string>("");
+      chat["name"] = row["name"].As<std::string>();
+      chat["last_message_at"] = row["last_message_at"].As<std::string>();
       chats.PushBack(std::move(chat));
     }
 
@@ -99,7 +101,7 @@ try {
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT COUNT(*) FROM seagull_schema.chat_users WHERE user_id = $1",
         user_id);
-    
+
     int total_chats = count_result.AsSingleRow<int>();
 
     userver::formats::json::ValueBuilder resp;

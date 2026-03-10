@@ -12,16 +12,18 @@
 
 #include <userver/utils/daemon_run.hpp>
 
+#include <add_user_to_chat_handler.hpp>
+#include <create_group_chat_handler.hpp>
+#include <get_chat_info_handler.hpp>
+#include <get_chats_handler.hpp>
 #include <get_messages_handler.hpp>
+#include <get_user_profile_handler.hpp>
+#include <leave_chat_handler.hpp>
 #include <login_handler.hpp>
 #include <register_handler.hpp>
-#include <send_message_handler.hpp>
-#include <get_messages_handler.hpp>
-#include <get_chats_handler.hpp>
-#include <get_user_profile_handler.hpp>
-#include <create_group_chat_handler.hpp>
+#include <remove_user_from_chat_handler.hpp>
 #include <search_users_handler.hpp>
-#include <get_chat_info_handler.hpp>
+#include <send_message_handler.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
@@ -37,11 +39,14 @@ int main(int argc, char* argv[]) {
           .Append<myservice::LoginHandler>()
           .Append<myservice::SendMessageHandler>()
           .Append<myservice::GetMessagesHandler>()
-	  .Append<myservice::GetChatsHandler>()
+          .Append<myservice::GetChatsHandler>()
           .Append<myservice::CreateGroupChatHandler>()
-	  .Append<myservice::SearchUsersHandler>()
-	  .Append<myservice::GetUserProfileHandler>()
-	  .Append<myservice::GetChatInfoHandler>();
+          .Append<myservice::AddUserToChatHandler>()
+          .Append<myservice::RemoveUserFromChatHandler>()
+          .Append<myservice::LeaveChatHandler>()
+          .Append<myservice::SearchUsersHandler>()
+          .Append<myservice::GetUserProfileHandler>()
+          .Append<myservice::GetChatInfoHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

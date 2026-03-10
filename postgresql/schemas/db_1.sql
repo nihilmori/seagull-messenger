@@ -8,14 +8,27 @@ CREATE TABLE IF NOT EXISTS seagull_schema.users (
     password_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
     name VARCHAR(100) NOT NULL,
-    bio VARCHAR(80)
+    bio VARCHAR(80) DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.messages (
     message_id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
-    send_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.chats (
+    chat_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.chat_users (
+    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
+    user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (chat_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.actions (
@@ -23,17 +36,4 @@ CREATE TABLE IF NOT EXISTS seagull_schema.actions (
     sender_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
     message_id INT REFERENCES seagull_schema.messages(message_id) ON DELETE CASCADE,
     chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS seagull_schema.chats (
-    chat_id SERIAL PRIMARY KEY,
-    chat_name VARCHAR(100) NOT NULL,
-    is_private BOOLEAN NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS seagull_schema.users_chats (
-    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
-    user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
-    joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (chat_id, user_id)
 );

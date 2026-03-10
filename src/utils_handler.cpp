@@ -1,7 +1,7 @@
 #include <utils_handler.hpp>
 
-#include <string>
 #include <random>
+#include <string>
 
 #include <userver/formats/json.hpp>
 
@@ -17,41 +17,48 @@ bool IsBlank(std::string_view value) {
   return value.find_first_not_of(" \t\n\r") == std::string_view::npos;
 }
 
-bool IsCorrectPassword(std::string_view password, const PasswordRequirements& reqs){
-	return !ValidatePassword(password, reqs).has_value();
+bool IsCorrectPassword(std::string_view password,
+                       const PasswordRequirements& reqs) {
+  return !ValidatePassword(password, reqs).has_value();
 }
 
-std::optional<std::string> ValidatePassword(std::string_view password, const PasswordRequirements& reqs){
-	if (password.length() < reqs.min_length){
-		return "Password must be at least " + std::to_string(reqs.min_length) + " characters";
-	}
-	if (password.length() > reqs.max_length){
-		return "Password must be a maximum on " + std::to_string(reqs.max_length) + " characters";
-	}
-	bool has_upper = false;
-	bool has_lower = false;
-	bool has_digit = false;
-	for (unsigned char c: password){
-		if (std::isupper(c)) has_upper = true;
-		else if (std::islower(c)) has_lower = true;
-		else if (std::isdigit(c)) has_digit = true;
-		else if (std::isspace(c)) {
-			return "Password can't contain spaces";
-		}
-	}
+std::optional<std::string> ValidatePassword(std::string_view password,
+                                            const PasswordRequirements& reqs) {
+  if (password.length() < reqs.min_length) {
+    return "Password must be at least " + std::to_string(reqs.min_length) +
+           " characters";
+  }
+  if (password.length() > reqs.max_length) {
+    return "Password must be a maximum on " + std::to_string(reqs.max_length) +
+           " characters";
+  }
+  bool has_upper = false;
+  bool has_lower = false;
+  bool has_digit = false;
+  for (unsigned char c : password) {
+    if (std::isupper(c))
+      has_upper = true;
+    else if (std::islower(c))
+      has_lower = true;
+    else if (std::isdigit(c))
+      has_digit = true;
+    else if (std::isspace(c)) {
+      return "Password can't contain spaces";
+    }
+  }
 
-	if (!has_upper) {
-		return "Password must contain uppercase letter";
-	}
+  if (!has_upper) {
+    return "Password must contain uppercase letter";
+  }
 
-	if (!has_lower) {
-		return "Password must contain lowercase letter";
-	}
+  if (!has_lower) {
+    return "Password must contain lowercase letter";
+  }
 
-	if (!has_digit) {
-		return "Password must contain digit";
-	}
-	return std::nullopt;
+  if (!has_digit) {
+    return "Password must contain digit";
+  }
+  return std::nullopt;
 }
 
 bool TryParseInt(std::string_view source, int& out_value) {

@@ -22,19 +22,27 @@ std::string GetChatInfoHandler::HandleRequestThrow(
   auto& response = request.GetHttpResponse();
   response.SetContentType("application/json");
 
-  const int chat_id = request["chat_id"].As<int>(0);
-  
-  if (chat_id <= 0) {
+  const auto& chat_id_arg = request.GetPathArg("chat_id");
+  int chat_id = 0;
+  if (!utils_handler::TryParseInt(chat_id_arg, chat_id) || chat_id <= 0) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("chat_id must be a positive integer");
   }
 
-  const int user_id = request["user_id"].As<int>(0);
+  int user_id = 0;
+  const auto& user_id_arg = request.GetArg("user_id");
+  if (!user_id_arg.empty()) {
+    if (!utils_handler::TryParseInt(user_id_arg, user_id) || user_id <= 0) {
+      response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return utils_handler::MakeErrorJson("user_id must be a positive integer");
+    }
+  }
 
   try {
     auto chat_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chat_id, name, type FROM seagull_schema.chats WHERE chat_id = $1",
+        "SELECT chat_id, name, type FROM seagull_schema.chats WHERE chat_id = "
+        "$1",
         chat_id);
 
     if (chat_result.IsEmpty()) {
@@ -54,7 +62,8 @@ std::string GetChatInfoHandler::HandleRequestThrow(
 
       if (participant_check.IsEmpty()) {
         response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-        return utils_handler::MakeErrorJson("User is not a participant of this chat");
+        return utils_handler::MakeErrorJson(
+            "User is not a participant of this chat");
       }
     }
 
