@@ -60,8 +60,24 @@ std::string CreateGroupChatHandler::HandleRequestThrow(
     participant_ids.push_back(user_id);
   }
 
+  if (participant_ids.empty()) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("participants must not be empty");
+  }
+
+  if (std::find(participant_ids.begin(), participant_ids.end(), creator_id) ==
+      participant_ids.end()) {
+    participant_ids.push_back(creator_id);
+  }
+
+  std::sort(participant_ids.begin(), participant_ids.end());
+  participant_ids.erase(
+      std::unique(participant_ids.begin(), participant_ids.end()),
+      participant_ids.end());
+
   auto transaction =
-      pg_cluster_->Begin(userver::storages::postgres::ClusterHostType::kMaster);
+      pg_cluster_->Begin(userver::storages::postgres::ClusterHostType::kMaster,
+                         userver::storages::postgres::TransactionOptions{});
 
   try {
     auto check_result = transaction.Execute(
@@ -83,10 +99,12 @@ std::string CreateGroupChatHandler::HandleRequestThrow(
 
     int chat_id = chat_result.AsSingleRow<int>();
 
-    transaction.Execute(
-        "INSERT INTO seagull_schema.chat_users (chat_id, user_id) "
-        "SELECT $1, user_id FROM UNNEST($2::int[]) AS user_id",
-        chat_id, participant_ids);
+    for (const int participant_id : participant_ids) {
+      transaction.Execute(
+          "INSERT INTO seagull_schema.chat_users (chat_id, user_id) "
+          "VALUES($1, $2)",
+          chat_id, participant_id);
+    }
 
     transaction.Commit();
 
@@ -101,6 +119,7 @@ std::string CreateGroupChatHandler::HandleRequestThrow(
     return userver::formats::json::ToString(resp.ExtractValue());
   } catch (const std::exception& e) {
     transaction.Rollback();
+    response.SetStatus(userver::server::http::HttpStatus::kInternalServerError);
     return utils_handler::MakeErrorJson("Failed create chat");
   }
 }

@@ -6,13 +6,13 @@
 
 namespace myservice {
 
-class GetChatsHandler final
+class LeaveChatHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-get-chats";
+  static constexpr std::string_view kName = "handler-leave-chat";
 
-  GetChatsHandler(const userver::components::ComponentConfig&,
-                  const userver::components::ComponentContext&);
+  LeaveChatHandler(const userver::components::ComponentConfig&,
+                   const userver::components::ComponentContext&);
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest&,

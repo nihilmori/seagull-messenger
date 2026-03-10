@@ -1,10 +1,10 @@
 #include <register_handler.hpp>
 #include <utils_handler.hpp>
 
+#include <userver/crypto/hash.hpp>
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/crypto/hash.hpp>
 
 namespace myservice {
 
@@ -32,8 +32,7 @@ std::string RegisterHandler::HandleRequestThrow(
   }
 
   const auto login = body["login"].As<std::string>("");
-  const auto password = body["password"].As<std::string>(
-      "");
+  const auto password = body["password"].As<std::string>("");
   const auto name = body["name"].As<std::string>("");
 
   if (utils_handler::IsBlank(login)) {
@@ -51,32 +50,37 @@ std::string RegisterHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'name' is required");
   }
 
-  auto password_hash = userver::crypto::hash::Sha256(
-    password, 
-    userver::crypto::hash::OutputEncoding::kBase64
-  );
+  const auto salt = utils_handler::GenerateSalt();
+  const auto password_hash = userver::crypto::hash::Sha256(
+      salt + password, userver::crypto::hash::OutputEncoding::kBase64);
 
-  const auto result = pg_cluster_->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "INSERT INTO seagull_schema.users(login, password_hash, name) "
-      "VALUES($1, $2, $3) "
-      "ON CONFLICT (login) DO NOTHING "
-      "RETURNING user_id, login, name",
-      login, password_hash, name);
+  try {
+    const auto result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO seagull_schema.users(login, password_hash, salt, name) "
+        "VALUES($1, $2, $3, $4) "
+        "ON CONFLICT (login) DO NOTHING "
+        "RETURNING user_id, login, name",
+        login, password_hash, salt, name);
 
-  if (result.IsEmpty()) {
-    response.SetStatus(userver::server::http::HttpStatus::kConflict);
-    return utils_handler::MakeErrorJson("User with this login already exists");
+    if (result.IsEmpty()) {
+      response.SetStatus(userver::server::http::HttpStatus::kConflict);
+      return utils_handler::MakeErrorJson(
+          "User with this login already exists");
+    }
+
+    const auto row = result[0];
+    userver::formats::json::ValueBuilder resp;
+    resp["user_id"] = row["user_id"].As<int>();
+    resp["login"] = row["login"].As<std::string>();
+    resp["name"] = row["name"].As<std::string>();
+
+    response.SetStatus(userver::server::http::HttpStatus::kCreated);
+    return userver::formats::json::ToString(resp.ExtractValue());
+  } catch (const std::exception&) {
+    response.SetStatus(userver::server::http::HttpStatus::kInternalServerError);
+    return utils_handler::MakeErrorJson("Database error occurred");
   }
-
-  const auto row = result[0];
-  userver::formats::json::ValueBuilder resp;
-  resp["user_id"] = row["user_id"].As<int>();
-  resp["login"] = row["login"].As<std::string>();
-  resp["name"] = row["name"].As<std::string>();
-
-  response.SetStatus(userver::server::http::HttpStatus::kCreated);
-  return userver::formats::json::ToString(resp.ExtractValue());
 }
 
 }  // namespace myservice

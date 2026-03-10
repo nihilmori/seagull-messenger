@@ -2,7 +2,6 @@
 #include <utils_handler.hpp>
 
 #include <algorithm>
-#include <tuple>
 #include <vector>
 
 #include <userver/formats/json.hpp>
@@ -52,6 +51,7 @@ std::string SendMessageHandler::HandleRequestThrow(
   }
 
   bool is_private_chat = (chat_id == 0);
+  bool created_new_private_chat = false;
 
   if (is_private_chat) {
     if (receiver_id <= 0) {
@@ -90,7 +90,8 @@ std::string SendMessageHandler::HandleRequestThrow(
   }
 
   auto transaction =
-      pg_cluster_->Begin(userver::storages::postgres::ClusterHostType::kMaster);
+      pg_cluster_->Begin(userver::storages::postgres::ClusterHostType::kMaster,
+                         userver::storages::postgres::TransactionOptions{});
 
   try {
     if (is_private_chat) {
@@ -116,12 +117,16 @@ std::string SendMessageHandler::HandleRequestThrow(
             chat_name);
 
         chat_id = new_chat.AsSingleRow<int>();
+        created_new_private_chat = true;
 
-        std::vector<int> user_ids = {sender_id, receiver_id};
         transaction.Execute(
             "INSERT INTO seagull_schema.chat_users (chat_id, user_id) "
-            "SELECT $1, user_id FROM UNNEST($2::int[]) AS user_id",
-            chat_id, user_ids);
+            "VALUES($1, $2)",
+            chat_id, sender_id);
+        transaction.Execute(
+            "INSERT INTO seagull_schema.chat_users (chat_id, user_id) "
+            "VALUES($1, $2)",
+            chat_id, receiver_id);
       } else {
         chat_id = chat_result.AsSingleRow<int>();
       }
@@ -145,8 +150,10 @@ std::string SendMessageHandler::HandleRequestThrow(
         "'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS') AS sent_at",
         content);
 
-    const auto [message_id, stored_content, sent_at] =
-        msg_result.AsSingleRow<std::tuple<int, std::string, std::string>>();
+    const auto msg_row = msg_result[0];
+    const int message_id = msg_row["message_id"].As<int>();
+    const std::string stored_content = msg_row["content"].As<std::string>();
+    const std::string sent_at = msg_row["sent_at"].As<std::string>();
 
     transaction.Execute(
         "INSERT INTO seagull_schema.actions(sender_id, message_id, chat_id) "
@@ -164,7 +171,7 @@ std::string SendMessageHandler::HandleRequestThrow(
 
     if (is_private_chat) {
       resp["receiver_id"] = receiver_id;
-      resp["is_new_chat"] = (chat_id != body["chat_id"].As<int>(0));
+      resp["is_new_chat"] = created_new_private_chat;
     }
 
     response.SetStatus(userver::server::http::HttpStatus::kCreated);
@@ -172,6 +179,7 @@ std::string SendMessageHandler::HandleRequestThrow(
 
   } catch (const std::exception& e) {
     transaction.Rollback();
+    response.SetStatus(userver::server::http::HttpStatus::kInternalServerError);
     return utils_handler::MakeErrorJson("Failed to send message");
   }
 }

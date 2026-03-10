@@ -22,8 +22,8 @@ std::string SearchUsersHandler::HandleRequestThrow(
   auto& response = request.GetHttpResponse();
   response.SetContentType("application/json");
 
-  const auto& query = request["query"].As<std::string>("");
-  
+  const auto& query = request.GetArg("query");
+
   if (query.empty()) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("Search query is required");
@@ -31,17 +31,19 @@ std::string SearchUsersHandler::HandleRequestThrow(
 
   if (query.length() < 2) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    return utils_handler::MakeErrorJson("Search query must be at least 2 characters");
+    return utils_handler::MakeErrorJson(
+        "Search query must be at least 2 characters");
   }
 
   try {
     std::string search_pattern = "%" + query + "%";
 
     auto result = [&]() {
-        return pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kSlave,
-            "SELECT user_id, name FROM seagull_schema.users WHERE name ILIKE $1 LIMIT 10",
-	    search_pattern);
+      return pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kSlave,
+          "SELECT user_id, name FROM seagull_schema.users WHERE name ILIKE $1 "
+          "LIMIT 10",
+          search_pattern);
     }();
 
     userver::formats::json::ValueBuilder users(

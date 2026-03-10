@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -10,13 +12,15 @@ std::string MakeErrorJson(std::string_view message);
 bool IsBlank(std::string_view value);
 
 struct PasswordRequirements {
-	size_t min_length = 8;
-	size_t max_length = 32;
+  size_t min_length = 8;
+  size_t max_length = 32;
 };
 
-bool IsCorrectPassword(std::string_view password, const PasswordRequirements& reqs = {});
+bool IsCorrectPassword(std::string_view password,
+                       const PasswordRequirements& reqs = {});
 
-std::optional<std::string> ValidatePassword(std::string_view password, const PasswordRequirements& reqs = {});
+std::optional<std::string> ValidatePassword(
+    std::string_view password, const PasswordRequirements& reqs = {});
 
 bool TryParseInt(std::string_view source, int& out_value);
 

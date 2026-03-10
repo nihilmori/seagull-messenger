@@ -3,10 +3,10 @@
 
 #include <string_view>
 
+#include <userver/crypto/hash.hpp>
 #include <userver/formats/json.hpp>
 #include <userver/server/http/http_status.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/crypto/hash.hpp>
 
 namespace myservice {
 
@@ -48,8 +48,7 @@ std::string LoginHandler::HandleRequestThrow(
 
   const auto salt_result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
-      "SELECT salt FROM seagull_schema.users WHERE login = $1",
-      login);
+      "SELECT salt FROM seagull_schema.users WHERE login = $1", login);
 
   if (salt_result.IsEmpty()) {
     response.SetStatus(userver::server::http::HttpStatus::kUnauthorized);
@@ -59,9 +58,7 @@ std::string LoginHandler::HandleRequestThrow(
   const auto salt = salt_result[0]["salt"].As<std::string>();
 
   auto password_hash = userver::crypto::hash::Sha256(
-    salt + password,
-    userver::crypto::hash::OutputEncoding::kBase64
-  );
+      salt + password, userver::crypto::hash::OutputEncoding::kBase64);
 
   const auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,

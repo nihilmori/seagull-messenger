@@ -22,7 +22,12 @@ std::string GetUserProfileHandler::HandleRequestThrow(
   auto& response = request.GetHttpResponse();
   response.SetContentType("application/json");
 
-  const int user_id = request["user_id"].As<int>(0);
+  const auto& user_id_arg = request.GetArg("user_id");
+  int user_id = 0;
+  if (!utils_handler::TryParseInt(user_id_arg, user_id)) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("user_id must be a positive integer");
+  }
 
   if (user_id <= 0) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
@@ -32,7 +37,8 @@ std::string GetUserProfileHandler::HandleRequestThrow(
   try {
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT user_id, login, name, bio FROM seagull_schema.users WHERE user_id = $1",
+        "SELECT user_id, login, name, bio FROM seagull_schema.users WHERE "
+        "user_id = $1",
         user_id);
 
     if (result.IsEmpty()) {
@@ -41,7 +47,7 @@ std::string GetUserProfileHandler::HandleRequestThrow(
     }
 
     const auto& row = result[0];
-    
+
     userver::formats::json::ValueBuilder resp;
     resp["user_id"] = row["user_id"].As<int>();
     resp["login"] = row["login"].As<std::string>();

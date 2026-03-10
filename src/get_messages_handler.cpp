@@ -62,6 +62,25 @@ std::string GetMessagesHandler::HandleRequestThrow(
     }
   }
 
+  const auto& user_id_str = request.GetArg("user_id");
+  int user_id = 0;
+  if (!utils_handler::TryParseInt(user_id_str, user_id) || user_id <= 0) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson("user_id must be a positive integer");
+  }
+
+  const auto participant_check =
+      pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kSlave,
+                           "SELECT 1 FROM seagull_schema.chat_users WHERE "
+                           "chat_id = $1 AND user_id = $2",
+                           chat_id, user_id);
+
+  if (participant_check.IsEmpty()) {
+    response.SetStatus(userver::server::http::HttpStatus::kForbidden);
+    return utils_handler::MakeErrorJson(
+        "User is not a participant of this chat");
+  }
+
   const auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
       "SELECT m.message_id, m.content, a.sender_id, a.chat_id, "

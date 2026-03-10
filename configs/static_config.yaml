@@ -90,6 +90,21 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        handler-add-user-to-chat:
+            path: /api/chat/{chat_id}/users/add
+            method: POST
+            task_processor: main-task-processor
+
+        handler-remove-user-from-chat:
+            path: /api/chat/{chat_id}/users/remove
+            method: POST
+            task_processor: main-task-processor
+
+        handler-leave-chat:
+            path: /api/chat/{chat_id}/leave
+            method: POST
+            task_processor: main-task-processor
+
         handler-search-users:
             path: /api/users/search
             method: GET
