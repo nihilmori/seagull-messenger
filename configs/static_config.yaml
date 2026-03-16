@@ -120,6 +120,21 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-update-chat:
+            path: /api/chat/{chat_id}
+            method: PATCH
+            task_processor: main-task-processor
+
+        handler-update-user:
+            path: /api/user/profile
+            method: PATCH
+            task_processor: main-task-processor
+
+        handler-edit-message:
+            path: /api/messages/{message_id}
+            method: PATCH
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION
