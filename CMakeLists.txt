@@ -37,6 +37,9 @@ add_library(
     src/remove_user_from_chat_handler.cpp
     src/search_users_handler.cpp
     src/get_chat_info_handler.cpp
+    src/update_chat_handler.cpp
+    src/update_user_handler.cpp
+    src/edit_message_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs
