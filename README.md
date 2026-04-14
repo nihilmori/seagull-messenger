@@ -14,6 +14,7 @@
 ```bash
 make build-debug
 make run-debug
+make test-debug
 ```
 
 Сервис поднимается на `8080`.
