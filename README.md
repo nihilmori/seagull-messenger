@@ -1,37 +1,48 @@
-#myservice
+# Seagull Messenger
 
-Template of a C++ service that uses [userver framework](https://github.com/userver-framework/userver).
+Учебный проект мессенджера на C++20 с использованием userver и PostgreSQL.
+Проект выполнен студентами НИУ ВШЭ СПб, факультет "Прикладная математика и информатика".
 
+## Участники проекта
 
-## Download and Build
+- [Габдрахманов Радмир](https://github.com/453254)
+- [Михальченко Игорь](https://github.com/Kw1ft)
+- [Пименов Арсений](https://github.com/nihilmori)
 
-To create your own userver-based service follow the following steps:
+## Быстрый старт
 
-1. Press the "Use this template button" at the top right of this GitHub page
-2. Clone the service `git clone your-service-repo && cd your-service-repo && git submodule update --init`
-3. Give a proper name to your service and replace all the occurrences of "myservice" string with that name
-4. Feel free to tweak, adjust or fully rewrite the source code of your service.
+```bash
+make build-debug
+make run-debug
+make test-debug
+```
 
+Сервис поднимается на `8080`.
 
-## Makefile
+Проверка ответа:
 
-`PRESET` is either `debug`, `release`, or if you've added custom presets in `CMakeUserPresets.json`, it
-can also be `debug-custom`, `release-custom`.
+```bash
+curl -i http://127.0.0.1:8080/ping
+```
 
-* `make cmake-PRESET` - run cmake configure, update cmake options and source file lists
-* `make build-PRESET` - build the service
-* `make test-PRESET` - build the service and run all tests
-* `make start-PRESET` - build the service, start it in testsuite environment and leave it running
-* `make install-PRESET` - build the service and install it in directory set in environment `PREFIX`
-* `make` or `make all` - build and run all tests in `debug` and `release` modes
-* `make format` - reformat all C++ and Python sources
-* `make dist-clean` - clean build files and cmake cache
-* `make docker-COMMAND` - run `make COMMAND` in docker environment
-* `make docker-clean-data` - stop docker containers
+## Документация
 
+- [Как собирать и запускать](docs/run.md)
+- [Подробное API](docs/api.md)
 
-## License
+## Стек
 
-The original template is distributed under the [Apache-2.0 License](https://github.com/userver-framework/userver/blob/develop/LICENSE)
-and [CLA](https://github.com/userver-framework/userver/blob/develop/CONTRIBUTING.md). Services based on the template may change
-the license and CLA.
+- C++20
+- userver
+- PostgreSQL
+- CMake + Ninja
+- Python testsuite
+
+## Структура проекта
+
+- `src/` — хендлеры и вспомогательная логика
+- `configs/` — конфигурация userver
+- `postgresql/schemas/` — SQL-схемы
+- `tests/` — тесты
+- `docs/` — документация проекта
+
