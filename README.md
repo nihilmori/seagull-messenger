@@ -71,8 +71,8 @@ seagull-messenger/
 ├── docs/
 │   ├── api.md
 │   ├── database.md
-│   ├── run.md
-│   └── 2026-04-15 15.01.05(1).jpg
+│   ├── database_schema.png
+│   └── run.md
 ├── Makefile
 ├── postgresql/
 │   ├── data/
