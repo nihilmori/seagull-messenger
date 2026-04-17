@@ -8,26 +8,51 @@
 #include <userver/server/handlers/tests_control.hpp>
 #include <userver/testsuite/testsuite_support.hpp>
 
-#include <userver/storages/postgres/component.hpp> 
+#include <userver/storages/postgres/component.hpp>
 
 #include <userver/utils/daemon_run.hpp>
 
-#include <hello.hpp>
-#include <hello_postgres.hpp> 
+#include <add_user_to_chat_handler.hpp>
+#include <create_group_chat_handler.hpp>
+#include <edit_message_handler.hpp>
+#include <get_chat_info_handler.hpp>
+#include <get_chats_handler.hpp>
+#include <get_messages_handler.hpp>
+#include <get_user_profile_handler.hpp>
+#include <leave_chat_handler.hpp>
+#include <login_handler.hpp>
+#include <register_handler.hpp>
+#include <remove_user_from_chat_handler.hpp>
+#include <search_users_handler.hpp>
+#include <send_message_handler.hpp>
+#include <update_chat_handler.hpp>
+#include <update_user_handler.hpp>
 
 int main(int argc, char* argv[]) {
-    auto component_list =
-        userver::components::MinimalServerComponentList()
-            .Append<userver::server::handlers::Ping>()
-            .Append<userver::components::TestsuiteSupport>()
-            .AppendComponentList(userver::clients::http::ComponentList())
-            .Append<userver::clients::dns::Component>()
-            .Append<userver::server::handlers::TestsControl>()
-            .Append<userver::congestion_control::Component>()
-            .Append<myservice::Hello>()
-            .Append<userver::components::Postgres>("postgres-db-1")
-            .Append<myservice::HelloPostgres>()
-        ;
+  auto component_list =
+      userver::components::MinimalServerComponentList()
+          .Append<userver::server::handlers::Ping>()
+          .Append<userver::components::TestsuiteSupport>()
+          .AppendComponentList(userver::clients::http::ComponentList())
+          .Append<userver::clients::dns::Component>()
+          .Append<userver::server::handlers::TestsControl>()
+          .Append<userver::congestion_control::Component>()
+          .Append<userver::components::Postgres>("postgres-db-1")
+          .Append<myservice::RegisterHandler>()
+          .Append<myservice::LoginHandler>()
+          .Append<myservice::SendMessageHandler>()
+          .Append<myservice::GetMessagesHandler>()
+          .Append<myservice::GetChatsHandler>()
+          .Append<myservice::CreateGroupChatHandler>()
+          .Append<myservice::AddUserToChatHandler>()
+          .Append<myservice::RemoveUserFromChatHandler>()
+          .Append<myservice::LeaveChatHandler>()
+          .Append<myservice::SearchUsersHandler>()
+          .Append<myservice::GetUserProfileHandler>()
+          .Append<myservice::GetChatInfoHandler>()
+          .Append<myservice::UpdateChatHandler>()
+          .Append<myservice::UpdateUserHandler>()
+          .Append<myservice::EditMessageHandler>();
 
-    return userver::utils::DaemonMain(argc, argv, component_list);
+  return userver::utils::DaemonMain(argc, argv, component_list);
 }

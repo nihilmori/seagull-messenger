@@ -34,6 +34,11 @@ $(addprefix test-, $(PRESETS)): test-%: build-%/CMakeCache.txt
 $(addprefix start-, $(PRESETS)): start-%:
 	cmake --build build-$* -v --target start-$(PROJECT_NAME)
 
+# Run the service binary directly (without testsuite)
+.PHONY: $(addprefix run-, $(PRESETS))
+$(addprefix run-, $(PRESETS)): run-%: build-%
+	./build-$*/$(PROJECT_NAME) --config ./configs/static_config.yaml --config_vars ./configs/config_vars.yaml
+
 # Cleanup data
 .PHONY: $(addprefix clean-, $(PRESETS))
 $(addprefix clean-, $(PRESETS)): clean-%:
@@ -69,10 +74,11 @@ format:
 .PHONY: $(addprefix docker-cmake-, $(PRESETS)) $(addprefix docker-build-, $(PRESETS)) $(addprefix docker-test-, $(PRESETS)) $(addprefix docker-clean-, $(PRESETS))
 $(addprefix docker-cmake-, $(PRESETS)) $(addprefix docker-build-, $(PRESETS)) $(addprefix docker-test-, $(PRESETS)) $(addprefix docker-clean-, $(PRESETS)): docker-%:
 	docker run $(DOCKER_ARGS) \
-		--network=host \
-		-v $$PWD:$$PWD \
-		-w $$PWD \
-		$(DOCKER_IMAGE) \
-		env CCACHE_DIR=$$PWD/.ccache \
-		    HOME=$$HOME \
-		    $$PWD/run_as_user.sh $(shell /bin/id -u) $(shell /bin/id -g) make $*
+	    --network=host \
+	    -v $$PWD:$$PWD \
+	    -w $$PWD \
+	    $(DOCKER_IMAGE) \
+	    env CCACHE_DIR=$$PWD/.ccache \
+	        HOME=$$HOME \
+	        $$PWD/run_as_user.sh $(shell /bin/id -u) $(shell /bin/id -g) make $*
+	

@@ -1,4 +1,6 @@
 components_manager:
+    static_config_validation:
+        validate_all_components: false
     task_processors:                  # Task processor is an executor for coroutine tasks
 
         main-task-processor:          # Make a task processor for CPU-bound coroutine tasks.
@@ -36,10 +38,10 @@ components_manager:
         testsuite-support: {}
 
         congestion-control:
+            load-enabled: false
 
         http-client:
         http-client-core:
-            load-enabled: $is_testing
             fs-task-processor: fs-task-processor
 
         dns-client:
@@ -58,15 +60,80 @@ components_manager:
             throttling_enabled: false
             url_trailing_slash: strict-match
 
-        handler-hello:                    # Finally! Our handler.
-            path: /hello                  # Registering handler by URL '/hello'.
-            method: GET,POST              # It will only reply to GET (HEAD) and POST requests.
-            task_processor: main-task-processor  # Run it on CPU bound task processor
+        handler-register:
+            path: /api/register
+            method: POST
+            task_processor: main-task-processor
 
-        handler-hello-postgres:          # Our postgres handler.
-            path: /hello-postgres         # Registering handler by URL '/hello-postgres'.
-            method: GET,POST              # It will only reply to GET (HEAD) and POST requests.
-            task_processor: main-task-processor  # Run it on CPU bound task processor
+        handler-login:
+            path: /api/login
+            method: POST
+            task_processor: main-task-processor
+
+        handler-send-message:
+            path: /api/messages/send
+            method: POST
+            task_processor: main-task-processor
+
+        handler-get-messages:
+            path: /api/messages
+            method: GET
+            task_processor: main-task-processor
+
+        handler-get-chats:
+            path: /api/chats
+            method: GET
+            task_processor: main-task-processor
+
+        handler-create-group-chat:
+            path: /api/chats/group
+            method: POST
+            task_processor: main-task-processor
+
+        handler-add-user-to-chat:
+            path: /api/chat/{chat_id}/users/add
+            method: POST
+            task_processor: main-task-processor
+
+        handler-remove-user-from-chat:
+            path: /api/chat/{chat_id}/users/remove
+            method: POST
+            task_processor: main-task-processor
+
+        handler-leave-chat:
+            path: /api/chat/{chat_id}/leave
+            method: POST
+            task_processor: main-task-processor
+
+        handler-search-users:
+            path: /api/users/search
+            method: GET
+            task_processor: main-task-processor
+
+        handler-get-user-profile:
+            path: /api/user/profile
+            method: GET
+            task_processor: main-task-processor
+
+        handler-get-chat-info:
+            path: /api/chat/{chat_id}
+            method: GET
+            task_processor: main-task-processor
+
+        handler-update-chat:
+            path: /api/chat/{chat_id}
+            method: PATCH
+            task_processor: main-task-processor
+
+        handler-update-user:
+            path: /api/user/profile
+            method: PATCH
+            task_processor: main-task-processor
+
+        handler-edit-message:
+            path: /api/messages/{message_id}
+            method: PATCH
+            task_processor: main-task-processor
 
         postgres-db-1:
             dbconnection: $pg-connection
