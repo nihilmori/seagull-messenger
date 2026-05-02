@@ -80,6 +80,11 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-search-messages:
+            path: /api/messages/search
+            method: GET
+            task_processor: main-task-processor
+
         handler-get-chats:
             path: /api/chats
             method: GET
@@ -133,6 +138,11 @@ components_manager:
         handler-edit-message:
             path: /api/messages/{message_id}
             method: PATCH
+            task_processor: main-task-processor
+
+        handler-delete-message:
+            path: /api/messages/{message_id}
+            method: DELETE
             task_processor: main-task-processor
 
         postgres-db-1:
