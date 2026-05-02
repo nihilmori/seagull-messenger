@@ -208,3 +208,184 @@ async def test_search_users_by_name(service_client, pgsql):
     response = await service_client.get('/api/users/search?query=Alice')
     assert response.status_code == 200
     assert response.json()['count'] >= 1
+
+
+# Проверяем добавление пользователя в групповой чат.
+async def test_add_user_to_chat(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'chat_owner')).json()['user_id']
+    guest_id = (await _register_user(service_client, 'chat_guest')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Add Chat')).json()['chat_id']
+
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+    assert response.status_code == 200
+
+
+# Проверяем удаление пользователя из группового чата.
+async def test_remove_user_from_chat(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'chat_remove_owner')).json()['user_id']
+    guest_id = (await _register_user(service_client, 'chat_remove_guest')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Remove Chat')).json()['chat_id']
+
+    await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/users/remove',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+    assert response.status_code == 200
+
+
+# Проверяем выход пользователя из чата.
+async def test_leave_chat(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'leave_owner')).json()['user_id']
+    guest_id = (await _register_user(service_client, 'leave_guest')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Leave Chat')).json()['chat_id']
+
+    await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/leave',
+        json={'user_id': guest_id},
+    )
+    assert response.status_code == 200
+
+
+# Проверяем получение информации о чате.
+async def test_get_chat_info(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'chat_info_user')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, user_id, 'Info Chat')).json()['chat_id']
+
+    response = await service_client.get(f'/api/chat/{chat_id}?user_id={user_id}')
+    assert response.status_code == 200
+    assert response.json()['chat_id'] == chat_id
+    assert response.json()['type_name'] == 'group'
+
+
+# Проверяем отправку сообщения в личный чат.
+async def test_send_private_message(service_client, pgsql):
+    sender_id = (await _register_user(service_client, 'pm_sender')).json()['user_id']
+    receiver_id = (await _register_user(service_client, 'pm_receiver')).json()['user_id']
+
+    response = await service_client.post(
+        '/api/messages/send',
+        json={
+            'sender_id': sender_id,
+            'receiver_id': receiver_id,
+            'chat_id': 0,
+            'content': 'Private hello',
+        },
+    )
+    assert response.status_code == 201
+    assert response.json()['chat_id'] > 0
+
+
+# Проверяем запрет чтения сообщений для неучастника чата.
+async def test_get_messages_forbidden_for_non_participant(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'msgs_owner')).json()['user_id']
+    other_id = (await _register_user(service_client, 'msgs_other')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Forbidden Chat')).json()['chat_id']
+
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': owner_id, 'chat_id': chat_id, 'content': 'Secret'},
+    )
+
+    response = await service_client.get(
+        f'/api/messages?chat_id={chat_id}&user_id={other_id}'
+    )
+    assert response.status_code == 403
+
+
+# Проверяем поиск сообщений в одном чате.
+async def test_search_messages_in_chat(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'search_chat_user')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, user_id, 'Search Chat')).json()['chat_id']
+
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat_id, 'content': 'Needle one'},
+    )
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat_id, 'content': 'Other text'},
+    )
+
+    response = await service_client.get(
+        f'/api/messages/search?query=Needle&user_id={user_id}&chat_id={chat_id}'
+    )
+    assert response.status_code == 200
+    assert response.json()['count'] >= 1
+
+
+# Проверяем поиск сообщений по всем чатам пользователя.
+async def test_search_messages_all_chats(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'search_all_user')).json()['user_id']
+    chat1_id = (await _create_group_chat(service_client, user_id, 'Search All 1')).json()['chat_id']
+    chat2_id = (await _create_group_chat(service_client, user_id, 'Search All 2')).json()['chat_id']
+
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat1_id, 'content': 'FindKey 1'},
+    )
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat2_id, 'content': 'FindKey 2'},
+    )
+
+    response = await service_client.get(
+        f'/api/messages/search?query=FindKey&user_id={user_id}'
+    )
+    assert response.status_code == 200
+    assert response.json()['count'] >= 2
+
+
+# Проверяем удаление сообщения автором.
+async def test_delete_message(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'delete_msg_owner')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, user_id, 'Delete Chat')).json()['chat_id']
+
+    msg_resp = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat_id, 'content': 'To delete'},
+    )
+    message_id = msg_resp.json()['message_id']
+
+    response = await service_client.delete(
+        f'/api/messages/{message_id}',
+        json={'user_id': user_id},
+    )
+    assert response.status_code == 200
+    assert response.json()['deleted'] is True
+
+
+# Проверяем запрет удаления чужого сообщения.
+async def test_delete_message_forbidden_for_non_sender(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'delete_owner')).json()['user_id']
+    other_id = (await _register_user(service_client, 'delete_other')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Delete Forbidden')).json()['chat_id']
+
+    await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': other_id},
+    )
+
+    msg_resp = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': owner_id, 'chat_id': chat_id, 'content': 'Keep'},
+    )
+    message_id = msg_resp.json()['message_id']
+
+    response = await service_client.delete(
+        f'/api/messages/{message_id}',
+        json={'user_id': other_id},
+    )
+    assert response.status_code == 403
