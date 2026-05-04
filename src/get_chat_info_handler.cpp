@@ -77,10 +77,20 @@ std::string GetChatInfoHandler::HandleRequestThrow(
     userver::formats::json::ValueBuilder participants(
         userver::formats::common::Type::kArray);
 
+    std::string peer_name;
+
     for (const auto& row : participants_result) {
       userver::formats::json::ValueBuilder participant;
-      participant["user_id"] = row["user_id"].As<int>();
-      participant["name"] = row["name"].As<std::string>();
+      const int participant_user_id = row["user_id"].As<int>();
+      const std::string participant_name = row["name"].As<std::string>();
+
+      participant["user_id"] = participant_user_id;
+      participant["name"] = participant_name;
+
+      if (chat_type != 0 && user_id > 0 && participant_user_id != user_id &&
+          peer_name.empty()) {
+        peer_name = participant_name;
+      }
       participants.PushBack(std::move(participant));
     }
 
@@ -88,6 +98,9 @@ std::string GetChatInfoHandler::HandleRequestThrow(
     resp["chat_id"] = chat_id;
     resp["name"] = chat_row["name"].As<std::string>();
     resp["type_name"] = (chat_type == 0) ? "group" : "private";
+    resp["display_name"] = (chat_type == 0 || peer_name.empty())
+                   ? chat_row["name"].As<std::string>()
+                   : peer_name;
     resp["participants"] = participants.ExtractValue();
     resp["participants_count"] = participants_result.Size();
 
