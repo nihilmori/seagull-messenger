@@ -73,17 +73,29 @@ std::string GetChatsHandler::HandleRequestThrow(
 
     const auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT c.chat_id, c.name, "
-        "to_char(MAX(m.sent_at) AT TIME ZONE 'Europe/Moscow', "
-        "'DD.MM.YYYY HH24:MI:SS') AS last_message_at "
-        "FROM seagull_schema.chats c "
-        "JOIN seagull_schema.chat_users cu ON cu.chat_id = c.chat_id "
-        "LEFT JOIN seagull_schema.actions a ON a.chat_id = c.chat_id "
-        "LEFT JOIN seagull_schema.messages m ON m.message_id = a.message_id "
-        "WHERE cu.user_id = $1 "
-        "GROUP BY c.chat_id, c.name "
-        "ORDER BY MAX(m.sent_at) DESC NULLS LAST, c.chat_id DESC "
-        "LIMIT $2 OFFSET $3",
+      "SELECT c.chat_id, c.name, c.type, "
+      "COALESCE(to_char(MAX(m.sent_at) AT TIME ZONE 'Europe/Moscow', "
+      "'DD.MM.YYYY HH24:MI:SS'), '') AS last_message_at, "
+      "CASE WHEN c.type = 0 THEN c.name ELSE ou.peer_name END AS "
+      "display_name, "
+      "CASE WHEN c.type = 0 THEN NULL ELSE ou.peer_user_id END AS "
+      "peer_user_id "
+      "FROM seagull_schema.chats c "
+      "JOIN seagull_schema.chat_users cu ON cu.chat_id = c.chat_id AND "
+      "cu.user_id = $1 "
+      "LEFT JOIN LATERAL ("
+      "  SELECT u.user_id AS peer_user_id, u.name AS peer_name "
+      "  FROM seagull_schema.chat_users cu2 "
+      "  JOIN seagull_schema.users u ON u.user_id = cu2.user_id "
+      "  WHERE cu2.chat_id = c.chat_id AND cu2.user_id <> $1 "
+      "  ORDER BY u.user_id ASC "
+      "  LIMIT 1"
+      ") ou ON TRUE "
+      "LEFT JOIN seagull_schema.actions a ON a.chat_id = c.chat_id "
+      "LEFT JOIN seagull_schema.messages m ON m.message_id = a.message_id "
+      "GROUP BY c.chat_id, c.name, c.type, ou.peer_user_id, ou.peer_name "
+      "ORDER BY MAX(m.sent_at) DESC NULLS LAST, c.chat_id DESC "
+      "LIMIT $2 OFFSET $3",
         user_id, limit, offset);
 
     userver::formats::json::ValueBuilder chats(
@@ -94,6 +106,10 @@ std::string GetChatsHandler::HandleRequestThrow(
       chat["chat_id"] = row["chat_id"].As<int>();
       chat["name"] = row["name"].As<std::string>();
       chat["last_message_at"] = row["last_message_at"].As<std::string>();
+      chat["display_name"] = row["display_name"].As<std::string>();
+      if (!row["peer_user_id"].IsNull()) {
+        chat["peer_user_id"] = row["peer_user_id"].As<int>();
+      }
       chats.PushBack(std::move(chat));
     }
 
