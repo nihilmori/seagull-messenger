@@ -29,6 +29,8 @@
 #include <send_message_handler.hpp>
 #include <update_chat_handler.hpp>
 #include <update_user_handler.hpp>
+#include <get_unread_messages.hpp>
+#include <mark_mesage_read.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
@@ -56,7 +58,9 @@ int main(int argc, char* argv[]) {
           .Append<myservice::UpdateUserHandler>()
           .Append<myservice::EditMessageHandler>()
           .Append<myservice::DeleteMessageHandler>()
-          .Append<myservice::SearchMessagesHandler>();
+          .Append<myservice::SearchMessagesHandler>()
+	  .Append<myservice::GetUnreadMessagesHandler>()
+          .Append<myservice::MarkMessagesReadHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

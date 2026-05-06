@@ -144,6 +144,16 @@ components_manager:
             path: /api/messages/{message_id}
             method: DELETE
             task_processor: main-task-processor
+        
+        get-unread-messages-handler:
+            path: /api/messages/unread
+            method: GET
+            task_processor: main-task-processor
+
+        mark-messages-read-handler:
+            path: /api/messages/read
+            method: POST
+            task_processor: main-task-processor
 
         postgres-db-1:
             dbconnection: $pg-connection
