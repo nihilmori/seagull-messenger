@@ -29,8 +29,8 @@
 #include <send_message_handler.hpp>
 #include <update_chat_handler.hpp>
 #include <update_user_handler.hpp>
-#include <get_unread_messages.hpp>
-#include <mark_mesage_read.hpp>
+#include <get_unread_messages_handler.hpp>
+#include <mark_messages_read_handler.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
