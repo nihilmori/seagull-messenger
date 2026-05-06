@@ -31,8 +31,7 @@ std::string GetUnreadMessagesHandler::HandleRequestThrow(
 
   const auto user_check = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
-      "SELECT 1 FROM seagull_schema.users WHERE user_id = $1",
-      user_id);
+      "SELECT 1 FROM seagull_schema.users WHERE user_id = $1", user_id);
 
   if (user_check.IsEmpty()) {
     response.SetStatus(userver::server::http::HttpStatus::kNotFound);
@@ -61,18 +60,18 @@ std::string GetUnreadMessagesHandler::HandleRequestThrow(
 
   userver::formats::json::ValueBuilder unread_chats(
       userver::formats::common::Type::kArray);
-  
+
   int total_unread = 0;
-  
+
   for (const auto& row : result) {
     userver::formats::json::ValueBuilder chat;
     chat["chat_id"] = row["chat_id"].As<int>();
     chat["chat_name"] = row["name"].As<std::string>();
     chat["type_name"] = row["type_name"].As<std::string>();
     chat["unread_count"] = row["unread_count"].As<int>();
-    
+
     total_unread += row["unread_count"].As<int>();
-    
+
     unread_chats.PushBack(std::move(chat));
   }
 

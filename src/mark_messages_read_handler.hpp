@@ -6,19 +6,21 @@
 
 namespace myservice {
 
-class MarkMessagesReadHandler final : public userver::server::handlers::HttpHandlerBase {
-public:
-    static constexpr std::string_view kName = "mark-messages-read-handler";
+class MarkMessagesReadHandler final
+    : public userver::server::handlers::HttpHandlerBase {
+ public:
+  static constexpr std::string_view kName = "mark-messages-read-handler";
 
-    MarkMessagesReadHandler(const userver::components::ComponentConfig& config,
-                            const userver::components::ComponentContext& component_context);
+  MarkMessagesReadHandler(
+      const userver::components::ComponentConfig& config,
+      const userver::components::ComponentContext& component_context);
 
-    std::string HandleRequestThrow(
-        const userver::server::http::HttpRequest& request,
-        userver::server::request::RequestContext& context) const override;
+  std::string HandleRequestThrow(
+      const userver::server::http::HttpRequest& request,
+      userver::server::request::RequestContext& context) const override;
 
-private:
-    std::shared_ptr<userver::storages::postgres::Cluster> pg_cluster_;
+ private:
+  std::shared_ptr<userver::storages::postgres::Cluster> pg_cluster_;
 };
 
-} // namespace myservice
+}  // namespace myservice

@@ -41,7 +41,8 @@ std::string MarkMessagesReadHandler::HandleRequestThrow(
     user_id = json["user_id"].As<int>();
   } catch (const std::exception& e) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    return utils_handler::MakeErrorJson("user_id is required and must be an integer");
+    return utils_handler::MakeErrorJson(
+        "user_id is required and must be an integer");
   }
 
   if (user_id <= 0) {
@@ -90,47 +91,50 @@ std::string MarkMessagesReadHandler::HandleRequestThrow(
 
     const auto participant_check = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT 1 FROM seagull_schema.chat_users WHERE chat_id = $1 AND user_id = $2",
+        "SELECT 1 FROM seagull_schema.chat_users WHERE chat_id = $1 AND "
+        "user_id = $2",
         chat_id, user_id);
 
     if (participant_check.IsEmpty()) {
       response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-      return utils_handler::MakeErrorJson("User is not a participant of this chat");
+      return utils_handler::MakeErrorJson(
+          "User is not a participant of this chat");
     }
 
-    pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE seagull_schema.chat_users "
-        "SET last_read_message_id = GREATEST(COALESCE(last_read_message_id, 0), $1) "
-        "WHERE chat_id = $2 AND user_id = $3",
-        message_id, chat_id, user_id);
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE seagull_schema.chat_users "
+                         "SET last_read_message_id = "
+                         "GREATEST(COALESCE(last_read_message_id, 0), $1) "
+                         "WHERE chat_id = $2 AND user_id = $3",
+                         message_id, chat_id, user_id);
 
-    pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE seagull_schema.messages m "
-        "SET is_read = TRUE "
-        "FROM seagull_schema.actions a "
-        "WHERE a.message_id = m.message_id "
-        "AND m.message_id = $1 "
-        "AND m.is_read = FALSE "
-        "AND a.sender_id != $2",
-        message_id, user_id);
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE seagull_schema.messages m "
+                         "SET is_read = TRUE "
+                         "FROM seagull_schema.actions a "
+                         "WHERE a.message_id = m.message_id "
+                         "AND m.message_id = $1 "
+                         "AND m.is_read = FALSE "
+                         "AND a.sender_id != $2",
+                         message_id, user_id);
 
-  } 
-  else if (chat_id != -1) {
+  } else if (chat_id != -1) {
     if (chat_id < 0) {
       response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-      return utils_handler::MakeErrorJson("chat_id must be a non-negative integer");
+      return utils_handler::MakeErrorJson(
+          "chat_id must be a non-negative integer");
     }
 
     const auto participant_check = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT 1 FROM seagull_schema.chat_users WHERE chat_id = $1 AND user_id = $2",
+        "SELECT 1 FROM seagull_schema.chat_users WHERE chat_id = $1 AND "
+        "user_id = $2",
         chat_id, user_id);
 
     if (participant_check.IsEmpty()) {
       response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-      return utils_handler::MakeErrorJson("User is not a participant of this chat");
+      return utils_handler::MakeErrorJson(
+          "User is not a participant of this chat");
     }
 
     const auto max_msg_result = pg_cluster_->Execute(
@@ -162,7 +166,6 @@ std::string MarkMessagesReadHandler::HandleRequestThrow(
           "AND m.message_id <= $2 "
           "AND a.sender_id != $3",
           chat_id, max_message_id, user_id);
-
     }
   }
 
@@ -180,4 +183,4 @@ std::string MarkMessagesReadHandler::HandleRequestThrow(
   return userver::formats::json::ToString(resp.ExtractValue());
 }
 
-} // namespace myservice
+}  // namespace myservice

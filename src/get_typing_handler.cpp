@@ -36,14 +36,16 @@ std::string GetTypingHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("user_id must be a positive integer");
   }
 
-  const auto participant_check = pg_cluster_->Execute(
-      userver::storages::postgres::ClusterHostType::kSlave,
-      "SELECT 1 FROM seagull_schema.chat_users WHERE chat_id = $1 AND user_id = $2",
-      chat_id, user_id);
+  const auto participant_check =
+      pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kSlave,
+                           "SELECT 1 FROM seagull_schema.chat_users WHERE "
+                           "chat_id = $1 AND user_id = $2",
+                           chat_id, user_id);
 
   if (participant_check.IsEmpty()) {
     response.SetStatus(userver::server::http::HttpStatus::kForbidden);
-    return utils_handler::MakeErrorJson("User is not a participant of this chat");
+    return utils_handler::MakeErrorJson(
+        "User is not a participant of this chat");
   }
 
   const auto result = pg_cluster_->Execute(
@@ -76,4 +78,4 @@ std::string GetTypingHandler::HandleRequestThrow(
   return userver::formats::json::ToString(resp.ExtractValue());
 }
 
-} // namespace myservice
+}  // namespace myservice
