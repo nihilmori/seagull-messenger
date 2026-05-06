@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS seagull_schema.chat_users (
     PRIMARY KEY (chat_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS seagull_schema.typing_status (
+    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
+    user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    is_typing BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (chat_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS seagull_schema.actions (
     action_id SERIAL PRIMARY KEY,
     sender_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,

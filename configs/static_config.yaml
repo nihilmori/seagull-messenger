@@ -155,6 +155,16 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        typing-handler:
+            path: /api/chat/{chat_id}/typing
+            method: POST
+            task_processor: main-task-processor
+
+        get-typing-handler:
+            path: /api/chat/{chat_id}/typing
+            method: GET
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION

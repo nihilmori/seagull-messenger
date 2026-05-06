@@ -162,6 +162,13 @@ std::string SendMessageHandler::HandleRequestThrow(
 
     transaction.Commit();
 
+    pg_cluster_->Execute(
+    	userver::storages::postgres::ClusterHostType::kMaster,
+    	"UPDATE seagull_schema.typing_status "
+    	"SET is_typing = FALSE, updated_at = CURRENT_TIMESTAMP "
+    	"WHERE chat_id = $1 AND user_id = $2",
+    	chat_id, sender_id);
+
     userver::formats::json::ValueBuilder resp;
     resp["message_id"] = message_id;
     resp["sender_id"] = sender_id;
