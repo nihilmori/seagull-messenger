@@ -58,11 +58,33 @@ Rectangle {
                     anchors.margins: 10
                     spacing: 4
 
-                    Text {
-                        text: modelData.display_name || modelData.name || ("Чат #" + modelData.chat_id)
-                        color: "#111827"
-                        font.bold: true
-                        elide: Text.ElideRight
+                    RowLayout {
+                        spacing: 6
+                        width: parent.width
+
+                        Text {
+                            text: modelData.display_name || modelData.name || ("Чат #" + modelData.chat_id)
+                            color: "#111827"
+                            font.bold: true
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            visible: modelData.unread_count > 0
+                            radius: 9
+                            color: "#2563eb"
+                            Layout.minimumWidth: 18
+                            Layout.preferredHeight: 18
+                            Layout.alignment: Qt.AlignVCenter
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.unread_count
+                                color: "#ffffff"
+                                font.pixelSize: 11
+                            }
+                        }
                     }
 
                     Text {

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
 ListView {
@@ -7,12 +8,24 @@ ListView {
     property var messagesModel: []
     property int currentUserId: -1
     property var userNamesById: ({})
+    signal deleteMessageRequested(int messageId)
+
+    signal editMessageRequested(int messageId, string content)
 
     Layout.fillWidth: true
     Layout.fillHeight: true
     clip: true
     spacing: 10
     model: root.messagesModel
+
+    function scrollToLatest() {
+        if (count > 0) {
+            positionViewAtEnd()
+        }
+    }
+
+    onCountChanged: scrollToLatest()
+    onModelChanged: scrollToLatest()
 
     function formatSentAt(value) {
         if (!value) {
@@ -79,6 +92,30 @@ ListView {
                     width: parent.width
                     wrapMode: Text.NoWrap
                     elide: Text.ElideRight
+                }
+            }
+
+            Menu {
+                id: messageActionsMenu
+                MenuItem {
+                    text: "Изменить"
+                    onTriggered: root.editMessageRequested(modelData.message_id, modelData.content)
+                }
+
+                MenuItem {
+                    text: "Удалить"
+                    onTriggered: root.deleteMessageRequested(modelData.message_id)
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: function(mouse) {
+                    if (!parent.parent.isOutgoing || mouse.button !== Qt.RightButton) {
+                        return
+                    }
+                    messageActionsMenu.popup()
                 }
             }
         }

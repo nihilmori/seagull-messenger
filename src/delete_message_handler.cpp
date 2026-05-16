@@ -31,15 +31,23 @@ std::string DeleteMessageHandler::HandleRequestThrow(
         "message_id must be a positive integer");
   }
 
+  int user_id = 0;
+  const auto& user_id_arg = request.GetArg("user_id");
+  if (!user_id_arg.empty()) {
+    utils_handler::TryParseInt(user_id_arg, user_id);
+  }
+
   userver::formats::json::Value body;
   try {
     body = userver::formats::json::FromString(request.RequestBody());
   } catch (const std::exception&) {
-    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
-    return utils_handler::MakeErrorJson("Invalid JSON body");
+    body = userver::formats::json::Value{};
   }
 
-  const int user_id = body["user_id"].As<int>(0);
+  if (user_id <= 0) {
+    user_id = body["user_id"].As<int>(0);
+  }
+
   if (user_id <= 0) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson(

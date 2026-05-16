@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS seagull_schema.chat_users (
     chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
     user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_read_message_id INT DEFAULT 0,
     PRIMARY KEY (chat_id, user_id)
 );
 

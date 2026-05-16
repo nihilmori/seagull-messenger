@@ -7,6 +7,7 @@ Rectangle {
 
     property string userLabel: ""
     signal logoutClicked()
+    signal searchTextChanged(string text)
 
     height: 64
     color: "#ffffff"
@@ -26,6 +27,13 @@ Rectangle {
         }
 
         Item { Layout.fillWidth: true }
+
+        TextField {
+            id: messageSearchField
+            placeholderText: "Поиск сообщений"
+            Layout.preferredWidth: 320
+            onTextChanged: root.searchTextChanged(text)
+        }
 
         Text {
             text: root.userLabel

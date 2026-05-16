@@ -99,8 +99,8 @@ std::string GetChatInfoHandler::HandleRequestThrow(
     resp["name"] = chat_row["name"].As<std::string>();
     resp["type_name"] = (chat_type == 0) ? "group" : "private";
     resp["display_name"] = (chat_type == 0 || peer_name.empty())
-                   ? chat_row["name"].As<std::string>()
-                   : peer_name;
+                               ? chat_row["name"].As<std::string>()
+                               : peer_name;
     resp["participants"] = participants.ExtractValue();
     resp["participants_count"] = participants_result.Size();
 
