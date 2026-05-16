@@ -120,6 +120,11 @@ const ApiClient = (function() {
                 return;
             }
 
+            if (normalizedMethod === "DELETE" && data === undefined) {
+                xhr.send();
+                return;
+            }
+
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.send(JSON.stringify(data || {}));
         };
@@ -250,7 +255,25 @@ const ApiClient = (function() {
         },
 
         deleteMessage(messageId, userId, cb) {
-            return sendRequest("DELETE", `/api/messages/${messageId}`, { user_id: userId }, cb);
+            return sendRequest("DELETE", `/api/messages/${messageId}?user_id=${encodeURIComponent(String(userId))}`, undefined, cb);
+        },
+
+        setTyping(chatId, userId, isTyping, cb) {
+            return sendRequest(
+                "POST",
+                `/api/chat/${chatId}/typing`,
+                { chat_id: chatId, user_id: userId, is_typing: Boolean(isTyping) },
+                cb
+            );
+        },
+
+        getTyping(chatId, userId, cb) {
+            return sendRequest(
+                "GET",
+                `/api/chat/${chatId}/typing`,
+                { chat_id: chatId, user_id: userId },
+                cb
+            );
         }
     };
 })();

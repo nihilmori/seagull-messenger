@@ -36,6 +36,7 @@ Rectangle {
             placeholderText: "Логин"
             Layout.fillWidth: true
             selectByMouse: true
+            onAccepted: authButton.clicked()
         }
 
         TextField {
@@ -44,9 +45,11 @@ Rectangle {
             echoMode: TextInput.Password
             Layout.fillWidth: true
             selectByMouse: true
+            onAccepted: authButton.clicked()
         }
 
         Button {
+            id: authButton
             text: isRegisterMode ? "Создать аккаунт" : "Войти"
             Layout.fillWidth: true
             onClicked: {
@@ -57,6 +60,8 @@ Rectangle {
                             errorLabel.color = "#059669"
                             errorLabel.text = "Регистрация успешна"
                             isRegisterMode = false
+                            nameField.text = ""
+                            loginField.text = ""
                             passwordField.text = ""
                         } else {
                             errorLabel.color = "#dc2626"

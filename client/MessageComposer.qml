@@ -6,6 +6,7 @@ Rectangle {
     id: root
 
     property int currentChatId: -1
+    property int editingMessageId: -1
     property string errorText: ""
     property string statusText: ""
 
@@ -13,6 +14,7 @@ Rectangle {
     property alias messageText: messageField.text
 
     signal sendClicked()
+    signal cancelEditClicked()
 
     Layout.fillWidth: true
     implicitHeight: composerContent.implicitHeight + 24
@@ -34,20 +36,28 @@ Rectangle {
             TextField {
                 id: privateReceiverField
                 placeholderText: "user_id для личного чата"
-                visible: root.currentChatId <= 0
+                visible: root.currentChatId <= 0 && root.editingMessageId <= 0
                 Layout.preferredWidth: 200
             }
 
             TextField {
                 id: messageField
-                placeholderText: root.currentChatId > 0 ? "Введите сообщение в чат" : "Введите сообщение для личного чата"
+                placeholderText: root.editingMessageId > 0
+                                 ? "Редактирование сообщения"
+                                 : (root.currentChatId > 0 ? "Введите сообщение в чат" : "Введите сообщение для личного чата")
                 Layout.fillWidth: true
                 onAccepted: root.sendClicked()
             }
 
             Button {
-                text: "Отправить"
+                text: root.editingMessageId > 0 ? "Сохранить" : "Отправить"
                 onClicked: root.sendClicked()
+            }
+
+            Button {
+                text: "Отмена"
+                visible: root.editingMessageId > 0
+                onClicked: root.cancelEditClicked()
             }
         }
 
