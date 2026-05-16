@@ -42,6 +42,10 @@ add_library(
     src/update_chat_handler.cpp
     src/update_user_handler.cpp
     src/edit_message_handler.cpp
+    src/get_unread_messages_handler.cpp
+    src/mark_messages_read_handler.cpp
+    src/typing_handler.cpp
+    src/get_typing_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs

@@ -103,7 +103,7 @@ std::string GetMessagesHandler::HandleRequestThrow(
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE seagull_schema.chat_users "
-        "SET last_read_message_id = GREATEST(last_read_message_id, $1) "
+      "SET last_read_message_id = GREATEST(COALESCE(last_read_message_id, 0), $1) "
         "WHERE chat_id = $2 AND user_id = $3",
         max_message_id, chat_id, user_id);
   }

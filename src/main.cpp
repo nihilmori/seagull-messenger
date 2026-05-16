@@ -19,14 +19,18 @@
 #include <get_chat_info_handler.hpp>
 #include <get_chats_handler.hpp>
 #include <get_messages_handler.hpp>
+#include <get_typing_handler.hpp>
+#include <get_unread_messages_handler.hpp>
 #include <get_user_profile_handler.hpp>
 #include <leave_chat_handler.hpp>
 #include <login_handler.hpp>
+#include <mark_messages_read_handler.hpp>
 #include <register_handler.hpp>
 #include <remove_user_from_chat_handler.hpp>
 #include <search_messages_handler.hpp>
 #include <search_users_handler.hpp>
 #include <send_message_handler.hpp>
+#include <typing_handler.hpp>
 #include <update_chat_handler.hpp>
 #include <update_user_handler.hpp>
 
@@ -56,7 +60,11 @@ int main(int argc, char* argv[]) {
           .Append<myservice::UpdateUserHandler>()
           .Append<myservice::EditMessageHandler>()
           .Append<myservice::DeleteMessageHandler>()
-          .Append<myservice::SearchMessagesHandler>();
+          .Append<myservice::SearchMessagesHandler>()
+          .Append<myservice::TypingHandler>()
+          .Append<myservice::GetTypingHandler>()
+          .Append<myservice::GetUnreadMessagesHandler>()
+          .Append<myservice::MarkMessagesReadHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }
