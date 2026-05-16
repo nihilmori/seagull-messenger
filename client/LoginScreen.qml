@@ -57,6 +57,8 @@ Rectangle {
                             errorLabel.color = "#059669"
                             errorLabel.text = "Регистрация успешна"
                             isRegisterMode = false
+                            nameField.text = ""
+                            loginField.text = ""
                             passwordField.text = ""
                         } else {
                             errorLabel.color = "#dc2626"

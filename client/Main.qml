@@ -201,6 +201,7 @@ Window {
         messagesModel = []
         participantsModel = []
         searchUsersModel = []
+        sidebar.searchText = ""
         composer.receiverText = ""
         composer.messageText = ""
         clearStatus()
@@ -283,9 +284,32 @@ Window {
             chatsModel: window.chatsModel
             searchUsersModel: window.searchUsersModel
             currentChatId: appState.currentChatId
-            onSearchTextChanged: loadSearchUsers(text)
+            onSearchTextChanged: loadSearchUsers(sidebar.searchText)
             onRefreshChatsClicked: loadChats()
             onChatSelected: selectChat(chatId)
+            onUserSelected: (userId, name) =>{
+                if (!userId || userId <= 0) {
+                    return
+                }
+
+                clearStatus()
+                const targetUserId = Number(userId)
+                const existing = (window.chatsModel || []).find(function(chat) {
+                    return chat && Number(chat.peer_user_id) === targetUserId && chat.chat_id
+                })
+
+                if (existing && existing.chat_id) {
+                    composer.receiverText = ""
+                    selectChat(existing.chat_id)
+                } else {
+                    if (appState.currentChatId > 0) {
+                        appState.currentChatId = -1
+                    }
+                    composer.receiverText = String(userId)
+                }
+                sidebar.searchText = ""
+                loadSearchUsers("")
+            }
         }
 
         Rectangle {
