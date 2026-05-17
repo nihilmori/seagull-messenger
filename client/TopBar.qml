@@ -8,6 +8,7 @@ Rectangle {
     property string userLabel: ""
     signal logoutClicked()
     signal searchTextChanged(string text)
+    signal wallClicked()
 
     height: 64
     color: "#ffffff"
@@ -27,6 +28,15 @@ Rectangle {
         }
 
         Item { Layout.fillWidth: true }
+
+	 Button {
+            text: "👤 Моя стена"
+            onClicked: wallClicked()
+            background: Rectangle {
+                color: parent.pressed ? "#e8f5e9" : "transparent"
+                radius: 4
+            }
+        }
 
         TextField {
             id: messageSearchField

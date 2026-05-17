@@ -23,6 +23,10 @@ Window {
         property string currentChatType: ""
     }
 
+    property bool showWall: false
+    property int wallUserId: 0
+    property string wallUserName: ""
+
     property var chatsModel: []
     property var messagesModel: []
     property var participantsModel: []
@@ -33,6 +37,16 @@ Window {
     property int editingMessageId: -1
     property var searchMessagesModel: []
     property string searchQuery: ""
+
+    function openWall(userId, userName) {
+        wallUserId = userId
+        wallUserName = userName || userNamesById[userId] || "Пользователь"
+        showWall = true
+    }
+
+    function closeWall() {
+        showWall = false
+    }
 
     Shortcut {
         sequence: "Escape"
@@ -266,6 +280,7 @@ Window {
     }
 
     function logout() {
+	showWall = false
         appState.isLoggedIn = false
         appState.currentUserId = -1
         appState.currentLogin = ""
@@ -341,165 +356,181 @@ Window {
         anchors.fill: parent
         visible: appState.isLoggedIn
 
-        Rectangle {
+        Item {
             anchors.fill: parent
-            color: "#f5f7fb"
-        }
-
-        TopBar {
-            id: topBar
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            userLabel: appState.currentName + " @" + appState.currentLogin
-            onLogoutClicked: logout()
-            onSearchTextChanged: loadSearchMessages(text)
-        }
-
-        Popup {
-            id: searchPopup
-            x: (window.width - 600) / 2
-            y: topBar.height
-            width: 600
-            height: 320
-            visible: searchQuery.length > 1 && searchMessagesModel && searchMessagesModel.length > 0
-            modal: false
+            visible: !showWall
 
             Rectangle {
                 anchors.fill: parent
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: "#f5f7fb"
+            }
 
-                ListView {
+            TopBar {
+                id: topBar
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                userLabel: appState.currentName + " @" + appState.currentLogin
+                onLogoutClicked: logout()
+                onSearchTextChanged: loadSearchMessages(text)
+                onWallClicked: openWall(appState.currentUserId, appState.currentName)
+            }
+
+            Popup {
+                id: searchPopup
+                x: (window.width - 600) / 2
+                y: topBar.height
+                width: 600
+                height: 320
+                visible: searchQuery.length > 1 && searchMessagesModel && searchMessagesModel.length > 0
+                modal: false
+
+                Rectangle {
                     anchors.fill: parent
-                    model: searchMessagesModel
-                    delegate: Rectangle {
-                        width: parent.width
-                        height: 56
-                        color: "#f9fafb"
-                        border.color: "#e5e7eb"
+                    color: "#ffffff"
+                    border.color: "#e5e7eb"
 
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 8
+                    ListView {
+                        anchors.fill: parent
+                        model: searchMessagesModel
+                        delegate: Rectangle {
+                            width: parent.width
+                            height: 56
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
 
-                            Text {
-                                text: chatTitle(modelData.chat_id) + ": " + (modelData.content || "")
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-                        }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 8
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (modelData.chat_id && modelData.chat_id > 0) {
-                                    selectChat(modelData.chat_id)
-                                    loadMessages()
+                                Text {
+                                    text: chatTitle(modelData.chat_id) + ": " + (modelData.content || "")
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
                                 }
-                                searchPopup.visible = false
                             }
-                        }
-                    }
-                }
-            }
-        }
 
-        ChatSidebar {
-            id: sidebar
-            anchors.left: parent.left
-            anchors.top: topBar.bottom
-            anchors.bottom: parent.bottom
-            chatsModel: window.chatsModel
-            searchUsersModel: window.searchUsersModel
-            currentChatId: appState.currentChatId
-            onSearchTextChanged: loadSearchUsers(sidebar.searchText)
-            onRefreshChatsClicked: loadChats()
-            onChatSelected: selectChat(chatId)
-            onUserSelected: (userId, name) =>{
-                                if (!userId || userId <= 0) {
-                                    return
-                                }
-
-                                clearStatus()
-                                const targetUserId = Number(userId)
-                                const existing = (window.chatsModel || []).find(function(chat) {
-                                    return chat && Number(chat.peer_user_id) === targetUserId && chat.chat_id
-                                })
-
-                                if (existing && existing.chat_id) {
-                                    composer.receiverText = ""
-                                    selectChat(existing.chat_id)
-                                } else {
-                                    if (appState.currentChatId > 0) {
-                                        appState.currentChatId = -1
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (modelData.chat_id && modelData.chat_id > 0) {
+                                        selectChat(modelData.chat_id)
+                                        loadMessages()
                                     }
-                                    composer.receiverText = String(userId)
+                                    searchPopup.visible = false
                                 }
-                                sidebar.searchText = ""
-                                loadSearchUsers("")
                             }
-        }
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.leftMargin: sidebar.width
-            anchors.right: parent.right
-            anchors.top: topBar.bottom
-            anchors.bottom: parent.bottom
-            color: "#f5f7fb"
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 12
-                spacing: 10
-
-                ChatHeaderCard {
-                    titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
-                    subtitleText: appState.currentChatId > 0
-                                  ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
-                                  : "Чтобы начать личный чат, введите user_id получателя"
-                }
-
-                MessageList {
-                    id: messagesList
-                    messagesModel: window.messagesModel
-                    currentUserId: appState.currentUserId
-                    userNamesById: window.userNamesById
-                    onEditMessageRequested: function(messageId, content) {
-                        startEditingMessage(messageId, content)
-                    }
-                    onDeleteMessageRequested: function(messageId) {
-                        if (!messageId || messageId <= 0) {
-                            return
                         }
-                        clearStatus()
-                        WebApi.ApiClient.deleteMessage(messageId, appState.currentUserId, function(status, response) {
-                            if (status === 200) {
-                                if (window.editingMessageId === messageId) {
-                                    cancelEditingMessage()
-                                }
-                                loadMessages()
-                                loadChats()
-                                setStatus("Сообщение удалено")
-                            } else {
-                                setError(response.error || "Не удалось удалить сообщение")
-                            }
-                        })
                     }
-                }
-
-                MessageComposer {
-                    id: composer
-                    currentChatId: appState.currentChatId
-                    editingMessageId: window.editingMessageId
-                    errorText: window.errorText
-                    statusText: window.statusText
-                    onSendClicked: sendCurrentMessage()
-                    onCancelEditClicked: cancelEditingMessage()
                 }
             }
+
+            ChatSidebar {
+                id: sidebar
+                anchors.left: parent.left
+                anchors.top: topBar.bottom
+                anchors.bottom: parent.bottom
+                chatsModel: window.chatsModel
+                searchUsersModel: window.searchUsersModel
+                currentChatId: appState.currentChatId
+                onSearchTextChanged: loadSearchUsers(sidebar.searchText)
+                onRefreshChatsClicked: loadChats()
+                onChatSelected: selectChat(chatId)
+                onUserSelected: (userId, name) =>{
+                                    if (!userId || userId <= 0) {
+                                        return
+                                    }
+
+                                    clearStatus()
+                                    const targetUserId = Number(userId)
+                                    const existing = (window.chatsModel || []).find(function(chat) {
+                                        return chat && Number(chat.peer_user_id) === targetUserId && chat.chat_id
+                                    })
+
+                                    if (existing && existing.chat_id) {
+                                        composer.receiverText = ""
+                                        selectChat(existing.chat_id)
+                                    } else {
+                                        if (appState.currentChatId > 0) {
+                                            appState.currentChatId = -1
+                                        }
+                                        composer.receiverText = String(userId)
+                                    }
+                                    sidebar.searchText = ""
+                                    loadSearchUsers("")
+                                }
+                onWallRequested: openWall(userId, name)
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: sidebar.width
+                anchors.right: parent.right
+                anchors.top: topBar.bottom
+                anchors.bottom: parent.bottom
+                color: "#f5f7fb"
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 10
+
+                    ChatHeaderCard {
+                        titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
+                        subtitleText: appState.currentChatId > 0
+                                      ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
+                                      : "Чтобы начать личный чат, введите user_id получателя"
+                    }
+
+                    MessageList {
+                        id: messagesList
+                        messagesModel: window.messagesModel
+                        currentUserId: appState.currentUserId
+                        userNamesById: window.userNamesById
+                        onEditMessageRequested: function(messageId, content) {
+                            startEditingMessage(messageId, content)
+                        }
+                        onDeleteMessageRequested: function(messageId) {
+                            if (!messageId || messageId <= 0) {
+                                return
+                            }
+                            clearStatus()
+                            WebApi.ApiClient.deleteMessage(messageId, appState.currentUserId, function(status, response) {
+                                if (status === 200) {
+                                    if (window.editingMessageId === messageId) {
+                                        cancelEditingMessage()
+                                    }
+                                    loadMessages()
+                                    loadChats()
+                                    setStatus("Сообщение удалено")
+                                } else {
+                                    setError(response.error || "Не удалось удалить сообщение")
+                                }
+                            })
+                        }
+                    }
+
+                    MessageComposer {
+                        id: composer
+                        currentChatId: appState.currentChatId
+                        editingMessageId: window.editingMessageId
+                        errorText: window.errorText
+                        statusText: window.statusText
+                        onSendClicked: sendCurrentMessage()
+                        onCancelEditClicked: cancelEditingMessage()
+                    }
+                }
+            }
+        }
+
+        WallScreen {
+            anchors.fill: parent
+            visible: showWall
+            userId: wallUserId
+            currentUserId: appState.currentUserId
+            userName: wallUserName
+            onBackClicked: closeWall()
         }
     }
 }

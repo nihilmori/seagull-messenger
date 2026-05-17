@@ -7,7 +7,7 @@ set(QT_QML_GENERATE_QMLLS_INI ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Qml QuickControls2)
 
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup()
 
 qt_add_executable(appSeagullClient
     main.cpp
@@ -24,6 +24,10 @@ qt_add_qml_module(appSeagullClient
         ChatHeaderCard.qml
         MessageList.qml
         MessageComposer.qml
+	WallScreen.qml
+	WallPostList.qml
+	WallPostComposer.qml
+	WallPost.qml
     RESOURCES
         ApiClient.js
 )

@@ -14,6 +14,7 @@ Rectangle {
     signal refreshChatsClicked()
     signal chatSelected(int chatId)
     signal userSelected(int userId, string name)
+    signal wallRequested(int userId, string name)
 
     width: 340
     color: "#ffffff"

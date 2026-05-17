@@ -88,7 +88,7 @@ std::string WallPostDeleteHandler::HandleRequestThrow(
             "SET is_deleted = true, updated_at = CURRENT_TIMESTAMP "
             "WHERE post_id = $1",
             post_id);
-        
+
         userver::formats::json::ValueBuilder response_body;
         response_body["post_id"] = post_id;
         response_body["deleted"] = true;

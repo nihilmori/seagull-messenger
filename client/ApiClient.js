@@ -274,6 +274,35 @@ const ApiClient = (function() {
                 { chat_id: chatId, user_id: userId },
                 cb
             );
+        },
+
+	createWallPost(wallOwnerId, authorId, content, cb) {
+            return sendRequest(
+                "POST",
+                `/api/wall/${wallOwnerId}/post`,
+                { author_id: authorId, content },
+                cb
+            );
+        },
+
+	getWallPosts(wallOwnerId, limit, offset, cb) {
+            const safeLimit = limit === undefined ? 50 : limit;
+            const safeOffset = offset === undefined ? 0 : offset;
+            return sendRequest(
+                "GET",
+                `/api/wall/${wallOwnerId}/posts`,
+                { limit: safeLimit, offset: safeOffset },
+                cb
+            );
+        },
+
+	deleteWallPost(postId, userId, cb) {
+            return sendRequest(
+                "DELETE",
+                `/api/wall/post/${postId}`,
+                { user_id: userId },
+                cb
+            );
         }
     };
 })();
