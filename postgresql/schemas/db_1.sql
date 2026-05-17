@@ -46,3 +46,13 @@ CREATE TABLE IF NOT EXISTS seagull_schema.actions (
     message_id INT REFERENCES seagull_schema.messages(message_id) ON DELETE CASCADE,
     chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS seagull_schema.wall_posts (
+    post_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    author_id INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE
+);

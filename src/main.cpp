@@ -33,6 +33,9 @@
 #include <typing_handler.hpp>
 #include <update_chat_handler.hpp>
 #include <update_user_handler.hpp>
+#include <wallpost_create_handler.hpp>
+#include <wallposts_get_handler.hpp>
+#include <wallpost_delete_handler.hpp>
 
 int main(int argc, char* argv[]) {
   auto component_list =
@@ -64,7 +67,10 @@ int main(int argc, char* argv[]) {
           .Append<myservice::TypingHandler>()
           .Append<myservice::GetTypingHandler>()
           .Append<myservice::GetUnreadMessagesHandler>()
-          .Append<myservice::MarkMessagesReadHandler>();
+          .Append<myservice::MarkMessagesReadHandler>()
+	  .Append<myservice::WallPostCreateHandler>()
+	  .Append<myservice::WallPostsGetHandler>()
+	  .Append<myservice::WallPostDeleteHandler>();
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

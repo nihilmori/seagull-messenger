@@ -165,6 +165,21 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-wallpost-create:
+            path: /api/wall/{user_id}/post
+            method: POST
+            task_processor: main-task-processor
+
+        handler-wallposts-get:
+            path: /api/wall/{user_id}/posts
+            method: GET
+            task_processor: main-task-processor
+
+        handler-wallpost-delete:
+            path: /api/wall/post/{post_id}
+            method: DELETE
+            task_processor: main-task-processor
+
         postgres-db-1:
             dbconnection: $pg-connection
             dbconnection#env: DB_CONNECTION

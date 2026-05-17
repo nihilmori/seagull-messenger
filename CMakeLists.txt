@@ -46,6 +46,9 @@ add_library(
     src/mark_messages_read_handler.cpp
     src/typing_handler.cpp
     src/get_typing_handler.cpp
+    src/wallpost_create_handler.cpp
+    src/wallposts_get_handler.cpp
+    src/wallpost_delete_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs
