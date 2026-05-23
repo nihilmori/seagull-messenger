@@ -29,6 +29,12 @@ Rectangle {
             placeholderText: "Ваше имя"
             visible: isRegisterMode
             Layout.fillWidth: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+            }
         }
 
         TextField {
@@ -36,6 +42,12 @@ Rectangle {
             placeholderText: "Логин"
             Layout.fillWidth: true
             selectByMouse: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+            }
             onAccepted: authButton.clicked()
         }
 
@@ -45,6 +57,12 @@ Rectangle {
             echoMode: TextInput.Password
             Layout.fillWidth: true
             selectByMouse: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+            }
             onAccepted: authButton.clicked()
         }
 
@@ -52,6 +70,12 @@ Rectangle {
             id: authButton
             text: isRegisterMode ? "Создать аккаунт" : "Войти"
             Layout.fillWidth: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: authButton.hovered ? "#e5e7eb" : "#dbeafe"
+                border.color: "#93c5fd"
+            }
             onClicked: {
                 errorLabel.text = ""
                 if (isRegisterMode) {
