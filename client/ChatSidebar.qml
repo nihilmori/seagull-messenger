@@ -35,18 +35,6 @@ Rectangle {
             }
         }
 
-        Button {
-            text: "Обновить чаты"
-            Layout.fillWidth: true
-            padding: 10
-            background: Rectangle {
-                radius: 12
-                color: "#f3f4f6"
-                border.color: "#e5e7eb"
-            }
-            onClicked: root.refreshChatsClicked()
-        }
-
         ListView {
             id: chatsList
             Layout.fillWidth: true
