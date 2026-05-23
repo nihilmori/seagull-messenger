@@ -38,6 +38,12 @@ Rectangle {
                 placeholderText: "user_id для личного чата"
                 visible: root.currentChatId <= 0 && root.editingMessageId <= 0
                 Layout.preferredWidth: 200
+                padding: 10
+                background: Rectangle {
+                    radius: 12
+                    color: "#f9fafb"
+                    border.color: "#e5e7eb"
+                }
             }
 
             TextField {
@@ -46,17 +52,35 @@ Rectangle {
                                  ? "Редактирование сообщения"
                                  : (root.currentChatId > 0 ? "Введите сообщение в чат" : "Введите сообщение для личного чата")
                 Layout.fillWidth: true
+                padding: 10
+                background: Rectangle {
+                    radius: 12
+                    color: "#f9fafb"
+                    border.color: "#e5e7eb"
+                }
                 onAccepted: root.sendClicked()
             }
 
             Button {
                 text: root.editingMessageId > 0 ? "Сохранить" : "Отправить"
+                padding: 10
+                background: Rectangle {
+                    radius: 12
+                    color: "#dbeafe"
+                    border.color: "#93c5fd"
+                }
                 onClicked: root.sendClicked()
             }
 
             Button {
                 text: "Отмена"
                 visible: root.editingMessageId > 0
+                padding: 10
+                background: Rectangle {
+                    radius: 12
+                    color: "#f3f4f6"
+                    border.color: "#e5e7eb"
+                }
                 onClicked: root.cancelEditClicked()
             }
         }

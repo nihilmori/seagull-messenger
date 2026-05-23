@@ -8,8 +8,10 @@ ListView {
     property var messagesModel: []
     property int currentUserId: -1
     property var userNamesById: ({})
-    signal deleteMessageRequested(int messageId)
+    property var participantsModel: []
+    property string currentChatType: ""
 
+    signal deleteMessageRequested(int messageId)
     signal editMessageRequested(int messageId, string content)
 
     Layout.fillWidth: true
@@ -43,7 +45,25 @@ ListView {
         return time + " " + day + "." + month + "." + year
     }
 
+    function senderName(senderId) {
+        if (senderId === undefined || senderId === null) {
+            return ""
+        }
+        const id = Number(senderId)
+        const list = root.participantsModel || []
+        for (let i = 0; i < list.length; i++) {
+            const participant = list[i]
+            if (participant && Number(participant.user_id) === id) {
+                return participant.name || ""
+            }
+        }
+        return root.userNamesById[id]
+            || root.userNamesById[String(senderId)]
+            || ""
+    }
+
     delegate: Rectangle {
+        id: delegateRoot
         required property var modelData
 
         width: root.width
@@ -58,13 +78,13 @@ ListView {
             id: bubble
 
             radius: 10
-            color: parent.isOutgoing ? "#dbeafe" : "#f3f4f6"
+            color: delegateRoot.isOutgoing ? "#dbeafe" : "#f3f4f6"
             border.color: "#e5e7eb"
 
             anchors.top: parent.top
             anchors.margins: 4
-            anchors.right: parent.isOutgoing ? parent.right : undefined
-            anchors.left: parent.isOutgoing ? undefined : parent.left
+            anchors.right: delegateRoot.isOutgoing ? parent.right : undefined
+            anchors.left: delegateRoot.isOutgoing ? undefined : parent.left
 
             implicitWidth: Math.min(parent.width * 0.78, Math.max(messageText.implicitWidth, timeText.implicitWidth) + 24)
             implicitHeight: messageColumn.implicitHeight + 16
@@ -74,6 +94,19 @@ ListView {
                 anchors.fill: parent
                 anchors.margins: 10
                 spacing: 4
+
+                Text {
+                    id: senderNameText
+                    text: root.senderName(modelData.sender_id)
+                    color: "#374151"
+                    font.pixelSize: 12
+                    font.bold: true
+                    visible: !delegateRoot.isOutgoing
+                        && root.currentChatType.toLowerCase() === "group"
+                        && Boolean(root.senderName(modelData.sender_id))
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
 
                 Text {
                     id: messageText
@@ -88,7 +121,7 @@ ListView {
                     text: root.formatSentAt(modelData.sent_at)
                     color: "#6b7280"
                     font.pixelSize: 12
-                    horizontalAlignment: parent.isOutgoing ? Text.AlignRight : Text.AlignLeft
+                    horizontalAlignment: delegateRoot.isOutgoing ? Text.AlignRight : Text.AlignLeft
                     width: parent.width
                     wrapMode: Text.NoWrap
                     elide: Text.ElideRight
@@ -97,22 +130,63 @@ ListView {
 
             Menu {
                 id: messageActionsMenu
+                implicitWidth: 200
+                padding: 6
+                clip: true
+                background: Rectangle {
+                    radius: 12
+                    color: "#ffffff"
+                    border.color: "#e5e7eb"
+                }
                 MenuItem {
+                    id: editMessageItem
                     text: "Изменить"
+                    implicitHeight: 32
+                    leftPadding: 12
+                    rightPadding: 12
+                    topPadding: 6
+                    bottomPadding: 6
+                    contentItem: Text {
+                        text: editMessageItem.text
+                        color: "#111827"
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    background: Rectangle {
+                        radius: 12
+                        color: editMessageItem.hovered ? "#e5e7eb" : "transparent"
+                    }
                     onTriggered: root.editMessageRequested(modelData.message_id, modelData.content)
                 }
 
                 MenuItem {
+                    id: deleteMessageItem
                     text: "Удалить"
+                    implicitHeight: 32
+                    leftPadding: 12
+                    rightPadding: 12
+                    topPadding: 6
+                    bottomPadding: 6
+                    contentItem: Text {
+                        text: deleteMessageItem.text
+                        color: "#111827"
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                    background: Rectangle {
+                        radius: 12
+                        color: deleteMessageItem.hovered ? "#e5e7eb" : "transparent"
+                    }
                     onTriggered: root.deleteMessageRequested(modelData.message_id)
                 }
             }
 
             MouseArea {
+                id: bubbleMouseArea
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onClicked: function(mouse) {
-                    if (!parent.parent.isOutgoing || mouse.button !== Qt.RightButton) {
+                    if (!delegateRoot.isOutgoing || mouse.button !== Qt.RightButton) {
                         return
                     }
                     messageActionsMenu.popup()

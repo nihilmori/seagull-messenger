@@ -8,7 +8,6 @@ Rectangle {
     property var chatsModel: []
     property var searchUsersModel: []
     property int currentChatId: -1
-
     property alias searchText: userSearchField.text
 
     signal refreshChatsClicked()
@@ -28,11 +27,23 @@ Rectangle {
             id: userSearchField
             placeholderText: "Поиск пользователей"
             Layout.fillWidth: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: "#f9fafb"
+                border.color: "#e5e7eb"
+            }
         }
 
         Button {
             text: "Обновить чаты"
             Layout.fillWidth: true
+            padding: 10
+            background: Rectangle {
+                radius: 12
+                color: "#f3f4f6"
+                border.color: "#e5e7eb"
+            }
             onClicked: root.refreshChatsClicked()
         }
 
