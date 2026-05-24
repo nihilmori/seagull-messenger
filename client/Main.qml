@@ -12,6 +12,12 @@ Window {
     title: qsTr("Seagull Client")
     color: "#f5f7fb"
 
+    palette.text: "#111827"
+    palette.windowText: "#111827"
+    palette.buttonText: "#111827"
+    palette.placeholderText: "#9ca3af"
+    palette.highlightedText: "#ffffff"
+
     QtObject {
         id: appState
         property bool isLoggedIn: false
