@@ -411,16 +411,21 @@ Window {
 
         Dialog {
             id: createChatDialog
-            title: "Создать групповой чат"
+            title: ""
             modal: true
             focus: true
             clip: true
-            x: (window.width - 420) / 2
+            x: (window.width - width) / 2
             y: (window.height - height) / 2
             width: 420
-            height: 230
+            implicitHeight: createChatLayout.implicitHeight + 24
+            height: implicitHeight
             background: Rectangle {
                 color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
             }
 
             property string errorText: ""
@@ -466,9 +471,17 @@ Window {
                 clip: true
 
                 ColumnLayout {
+                    id: createChatLayout
                     anchors.fill: parent
                     anchors.margins: 12
                     spacing: 8
+
+                    Text {
+                        text: "Создать групповой чат"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
 
                     TextField {
                         id: chatNameField
@@ -559,7 +572,7 @@ Window {
             modal: true
             focus: true
             clip: true
-            x: (window.width - 360) / 2
+            x: (window.width - width) / 2
             y: (window.height - height) / 2
             width: 360
             implicitHeight: renameChatLayout.implicitHeight + 24
@@ -697,7 +710,7 @@ Window {
             modal: true
             focus: true
             clip: true
-            x: (window.width - 360) / 2
+            x: (window.width - width) / 2
             y: (window.height - height) / 2
             width: 360
             implicitHeight: addUserLayout.implicitHeight + 24
@@ -834,7 +847,7 @@ Window {
             modal: true
             focus: true
             clip: true
-            x: (window.width - 360) / 2
+            x: (window.width - width) / 2
             y: (window.height - height) / 2
             width: 360
             implicitHeight: removeUserLayout.implicitHeight + 24
@@ -971,8 +984,8 @@ Window {
             modal: true
             focus: true
             clip: true
-            x: (window.width - 420) / 2
-            y: (window.height - 420) / 2
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
             width: 420
             height: 420
             background: Rectangle {
@@ -1129,7 +1142,7 @@ Window {
             modal: true
             focus: true
             clip: true
-            x: (window.width - 360) / 2
+            x: (window.width - width) / 2
             y: (window.height - height) / 2
             width: 360
             implicitHeight: leaveChatLayout.implicitHeight + 24
@@ -1231,7 +1244,7 @@ Window {
 
         Popup {
             id: searchPopup
-            x: (window.width - 600) / 2
+            x: (window.width - width) / 2
             y: topBar.height
             width: 600
             height: 320
