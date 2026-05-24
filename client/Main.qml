@@ -39,6 +39,37 @@ Window {
     property int editingMessageId: -1
     property var searchMessagesModel: []
     property string searchQuery: ""
+    property var typingUsersModel: []
+
+    function refreshTyping() {
+        if (!appState.isLoggedIn || appState.currentChatId <= 0) {
+            typingUsersModel = []
+            return
+        }
+        WebApi.ApiClient.getTyping(appState.currentChatId, appState.currentUserId, function(status, response) {
+            if (status === 200 && response && response.typing_users) {
+                typingUsersModel = response.typing_users
+            } else if (status !== 0) {
+                typingUsersModel = []
+            }
+        })
+    }
+
+    Timer {
+        id: typingPollTimer
+        interval: 3000
+        repeat: true
+        running: appState.isLoggedIn && appState.currentChatId > 0
+        onTriggered: refreshTyping()
+    }
+
+    Connections {
+        target: appState
+        function onCurrentChatIdChanged() {
+            typingUsersModel = []
+            refreshTyping()
+        }
+    }
 
     Shortcut {
         sequence: "Escape"
@@ -293,6 +324,7 @@ Window {
             WebApi.ApiClient.sendMessage(appState.currentUserId, composer.messageText, appState.currentChatId, null, function(status, response) {
                 if (status === 201) {
                     composer.messageText = ""
+                    composer.notifyMessageSent()
                     loadMessages()
                     loadChats()
                 } else {
@@ -311,6 +343,7 @@ Window {
         WebApi.ApiClient.sendMessage(appState.currentUserId, composer.messageText, 0, receiverId, function(status, response) {
             if (status === 201) {
                 composer.messageText = ""
+                composer.notifyMessageSent()
                 if (response.chat_id) {
                     appState.currentChatId = response.chat_id
                 }
@@ -1361,6 +1394,7 @@ Window {
                                   : "Чтобы начать личный чат, введите user_id получателя"
                     showMenu: appState.currentChatId > 0
                               && appState.currentChatType.toLowerCase() === "group"
+                    typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
                     onTitleClicked: {
                         if (appState.currentChatId > 0) {
                             participantsDialog.open()
@@ -1425,6 +1459,7 @@ Window {
                 MessageComposer {
                     id: composer
                     currentChatId: appState.currentChatId
+                    currentUserId: appState.currentUserId
                     editingMessageId: window.editingMessageId
                     errorText: window.errorText
                     statusText: window.statusText
