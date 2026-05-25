@@ -24,8 +24,16 @@ qt_add_qml_module(appSeagullClient
         ChatHeaderCard.qml
         MessageList.qml
         MessageComposer.qml
+        UserWall.qml
+        UserWallHeader.qml
+        PostCard.qml
+        CreatePostPanel.qml
     RESOURCES
         ApiClient.js
+        QML_FILES UserWall.qml
+        QML_FILES UserWallHeader.qml
+        QML_FILES PostCard.qml
+        QML_FILES CreatePostPanel.qml
 )
 
 target_link_libraries(appSeagullClient

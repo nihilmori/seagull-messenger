@@ -39,7 +39,17 @@ Window {
     property int editingMessageId: -1
     property var searchMessagesModel: []
     property string searchQuery: ""
+    property string currentMode: "chat"
     property var typingUsersModel: []
+
+    signal openUserWall(int userId)
+
+    onOpenUserWall: function(userId) {
+        if (userId > 0) {
+            console.log("Opening wall for user:", userId)
+            currentMode = "wall"
+            userWall.userId = userId
+            userWall.loadUserProfile()
 
     function refreshTyping() {
         if (!appState.isLoggedIn || appState.currentChatId <= 0) {
@@ -1348,6 +1358,9 @@ Window {
             onRefreshChatsClicked: loadChats()
             onChatSelected: function(chatId) {
                 selectChat(chatId)
+                if (currentMode !== "chat") {
+                    currentMode = "chat"
+                }
             }
             onUserSelected: (userId, name) =>{
                                 if (!userId || userId <= 0) {
@@ -1382,11 +1395,25 @@ Window {
             anchors.bottom: parent.bottom
             color: "#f5f7fb"
 
-            ColumnLayout {
-                anchors.fill: parent
+            RowLayout {
+                id: modeSwitcher
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
                 anchors.margins: 12
-                spacing: 10
+                height: 40
+                spacing: 8
+                visible: appState.isLoggedIn
 
+                Button {
+                    text: "Чаты"
+                    checkable: true
+                    checked: currentMode === "chat"
+                    onClicked: currentMode = "chat"
+                    background: Rectangle {
+                        radius: 20
+                        color: parent.checked ? "#dbeafe" : "#f3f4f6"
+                        border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
                 ChatHeaderCard {
                     titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
                     subtitleText: appState.currentChatId > 0
@@ -1402,60 +1429,194 @@ Window {
                             setError("Сначала выберите чат")
                         }
                     }
-                    onRenameChatClicked: {
-                        if (ensureGroupChat("Переименование")) {
-                            renameChatDialog.open()
-                        }
-                    }
-                    onAddUserClicked: {
-                        if (ensureGroupChat("Добавление участников")) {
-                            addUserDialog.open()
-                        }
-                    }
-                    onRemoveUserClicked: {
-                        if (ensureGroupChat("Удаление участников")) {
-                            removeUserDialog.open()
-                        }
-                    }
-                    onLeaveChatClicked: {
-                        if (appState.currentChatId > 0) {
-                            leaveChatDialog.open()
-                        } else {
-                            setError("Сначала выберите чат")
-                        }
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.checked ? "#2563eb" : "#6b7280"
                     }
                 }
 
-                MessageList {
-                    id: messagesList
-                    messagesModel: window.messagesModel
-                    currentUserId: appState.currentUserId
-                    userNamesById: window.userNamesById
-                    participantsModel: window.participantsModel
-                    currentChatType: appState.currentChatType
-                    onEditMessageRequested: function(messageId, content) {
-                        startEditingMessage(messageId, content)
+                Button {
+                    text: "Моя стена"
+                    checkable: true
+                    checked: currentMode === "myWall"
+                    onClicked: {
+                        currentMode = "myWall"
+                        userWall.userId = appState.currentUserId
+                        userWall.loadUserProfile()
                     }
-                    onDeleteMessageRequested: function(messageId) {
-                        if (!messageId || messageId <= 0) {
-                            return
+                    background: Rectangle {
+                        radius: 20
+                        color: parent.checked ? "#dbeafe" : "#f3f4f6"
+                        border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.checked ? "#2563eb" : "#6b7280"
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                TextField {
+                    id: wallSearchField
+                    placeholderText: "Поиск по стене..."
+                    visible: currentMode !== "chat"
+                    Layout.preferredWidth: 200
+                    padding: 8
+                    background: Rectangle {
+                        radius: 20
+                        color: "#f9fafb"
+                        border.color: "#e5e7eb"
+                    }
+                    onTextChanged: {
+                        if (currentMode !== "chat") {
+                            userWall.searchQuery = text
                         }
-                        clearStatus()
-                        WebApi.ApiClient.deleteMessage(messageId, appState.currentUserId, function(status, response) {
-                            if (status === 200) {
-                                if (window.editingMessageId === messageId) {
-                                    cancelEditingMessage()
+                    }
+                }
+            }
+
+            StackLayout {
+                anchors.top: modeSwitcher.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 12
+                currentIndex: currentMode === "chat" ? 0 : 1
+
+                ColumnLayout {
+                    spacing: 10
+
+                    ChatHeaderCard {
+                        id: chatHeader
+                        Layout.fillWidth: true
+                        titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
+                        subtitleText: appState.currentChatId > 0
+                                      ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
+                                      : "Чтобы начать личный чат, введите user_id получателя"
+                        showMenu: appState.currentChatId > 0
+                                  && appState.currentChatType.toLowerCase() === "group"
+
+                        // Добавляем свойства для личного чата
+                        peerUserId: {
+                            if (appState.currentChatId > 0 && appState.currentChatType === 'private') {
+                                // Находим ID собеседника
+                                for (var i = 0; i < participantsModel.length; i++) {
+                                    if (participantsModel[i].user_id !== appState.currentUserId) {
+                                        return participantsModel[i].user_id
+                                    }
                                 }
-                                loadMessages()
-                                loadChats()
-                                setStatus("Сообщение удалено")
+                            }
+                            return 0
+                        }
+
+                        onTitleClicked: {
+                            if (appState.currentChatId > 0) {
+                                participantsDialog.open()
                             } else {
-                                setError(response.error || "Не удалось удалить сообщение")
+                                setError("Сначала выберите чат")
+                            }
+                        }
+
+                        onOpenUserWall: {
+                            if (chatHeader.peerUserId > 0) {
+                                console.log("Opening wall from chat header for user:", chatHeader.peerUserId)
+                                currentMode = "wall"
+                                userWall.userId = chatHeader.peerUserId
+                                userWall.loadUserProfile()
+                            }
+                        }
+
+                        onRenameChatClicked: {
+                            if (ensureGroupChat("Переименование")) {
+                                renameChatDialog.open()
+                            }
+                        }
+                        onAddUserClicked: {
+                            if (ensureGroupChat("Добавление участников")) {
+                                addUserDialog.open()
+                            }
+                        }
+                        onRemoveUserClicked: {
+                            if (ensureGroupChat("Удаление участников")) {
+                                removeUserDialog.open()
+                            }
+                        }
+                        onLeaveChatClicked: {
+                            if (appState.currentChatId > 0) {
+                                leaveChatDialog.open()
+                            } else {
+                                setError("Сначала выберите чат")
+                            }
+                        }
+                    }
+
+                    MessageList {
+                        id: messagesList
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        messagesModel: window.messagesModel
+                        currentUserId: appState.currentUserId
+                        userNamesById: window.userNamesById
+                        participantsModel: window.participantsModel
+                        currentChatType: appState.currentChatType
+                        onEditMessageRequested: function(messageId, content) {
+                            startEditingMessage(messageId, content)
+                        }
+                        onDeleteMessageRequested: function(messageId) {
+                            if (!messageId || messageId <= 0) return
+                            clearStatus()
+                            WebApi.ApiClient.deleteMessage(messageId, appState.currentUserId, function(status, response) {
+                                if (status === 200) {
+                                    if (window.editingMessageId === messageId) cancelEditingMessage()
+                                    loadMessages()
+                                    loadChats()
+                                    setStatus("Сообщение удалено")
+                                } else {
+                                    setError(response.error || "Не удалось удалить сообщение")
+                                }
+                            })
+                        }
+                    }
+
+                    MessageComposer {
+                        id: composer
+                        Layout.fillWidth: true
+                        currentChatId: appState.currentChatId
+                        editingMessageId: window.editingMessageId
+                        errorText: window.errorText
+                        statusText: window.statusText
+                        onSendClicked: sendCurrentMessage()
+                        onCancelEditClicked: cancelEditingMessage()
+                    }
+                }
+
+                UserWall {
+                    id: userWall
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    userId: appState.currentUserId
+
+                    onPostCreated: function(content) {
+                        var currentWallOwnerId = userWall.userId
+                        console.log("Creating post for user:", currentWallOwnerId)
+
+                        WebApi.ApiClient.createPost(currentWallOwnerId, appState.currentUserId, content, function(status, response) {
+                            console.log("Create post response status:", status)
+                            if (status === 201) {
+                                setStatus("Пост опубликован на стене пользователя")
+                                userWall.refresh()
+                            } else {
+                                setError(response.error || "Не удалось создать пост")
                             }
                         })
                     }
-                }
 
+                    onPostDeleted: function(postId) {
+                        console.log("Post deleted:", postId)
+                        userWall.userId = -1
+                        userWall.userId = appState.currentUserId
+                    }
                 MessageComposer {
                     id: composer
                     currentChatId: appState.currentChatId

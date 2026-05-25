@@ -274,6 +274,40 @@ const ApiClient = (function() {
                 { chat_id: chatId, user_id: userId },
                 cb
             );
+        },
+
+        getUserWall(userId, limit, offset, cb) {
+            const safeLimit = limit === undefined ? 50 : limit;
+            const safeOffset = offset === undefined ? 0 : offset;
+            return sendRequest(
+                "GET",
+                `/api/wall/${userId}/posts`,
+                { limit: safeLimit, offset: safeOffset },
+                cb
+            );
+        },
+
+        createPost(wallOwnerId, authorId, content, cb) {
+            return sendRequest(
+                "POST",
+                `/api/wall/${wallOwnerId}/post`,
+                { author_id: authorId, content: content },
+                cb
+            );
+        },
+
+        deletePost(postId, userId, cb) {
+            return sendRequest(
+                "DELETE",
+                `/api/wall/post/${postId}?user_id=${encodeURIComponent(String(userId))}`,
+                undefined,
+                cb
+            );
+        },
+
+        updateUserProfile(userId, data, cb) {
+            const payload = Object.assign({ user_id: userId }, data || {});
+            return sendRequest("PATCH", "/api/user/profile", payload, cb);
         }
     };
 })();

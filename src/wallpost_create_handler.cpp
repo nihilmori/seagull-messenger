@@ -56,17 +56,19 @@ std::string WallPostCreateHandler::HandleRequestThrow(
     }
 
     try {
-        auto users_result = pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kSlave,
-            "SELECT user_id, name FROM seagull_schema.users WHERE user_id IN ($1, $2)",
-            wall_owner_id, author_id);
+	auto users_result = pg_cluster_->Execute(
+    	    userver::storages::postgres::ClusterHostType::kSlave,
+    	    "SELECT user_id, name FROM seagull_schema.users WHERE user_id IN ($1, $2)",
+    	    wall_owner_id, author_id);
 
-        if (users_result.Size() != 2) {
-            response.SetStatus(userver::server::http::HttpStatus::kNotFound);
-            return utils_handler::MakeErrorJson("User not found");
-        }
+	    auto expected_count = (wall_owner_id == author_id) ? 1 : 2;
 
-        std::string author_name;
+	if (users_result.Size() != static_cast<size_t>(expected_count)) {
+	    response.SetStatus(userver::server::http::HttpStatus::kNotFound);
+	    return utils_handler::MakeErrorJson("User not found");
+	}
+
+	std::string author_name;
         for (const auto& row : users_result) {
             int user_id = row["user_id"].As<int>();
             if (user_id == author_id) {
