@@ -1,11 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ApiClient.js" as WebApi
 
 Rectangle {
     id: root
 
     property int currentChatId: -1
+    property int currentUserId: -1
     property int editingMessageId: -1
     property string errorText: ""
     property string statusText: ""
@@ -13,8 +15,70 @@ Rectangle {
     property alias receiverText: privateReceiverField.text
     property alias messageText: messageField.text
 
+    property bool _typingActive: false
+
     signal sendClicked()
     signal cancelEditClicked()
+
+    function _sendTyping(isTyping) {
+        if (currentChatId <= 0 || currentUserId <= 0) {
+            return
+        }
+        WebApi.ApiClient.setTyping(currentChatId, currentUserId, isTyping, function() {})
+    }
+
+    function _stopTyping() {
+        typingHeartbeat.stop()
+        typingIdle.stop()
+        if (_typingActive) {
+            _typingActive = false
+            _sendTyping(false)
+        }
+    }
+
+    function _handleTextChanged(text) {
+        if (currentChatId <= 0 || currentUserId <= 0) {
+            return
+        }
+        if (text && text.length > 0) {
+            if (!_typingActive) {
+                _typingActive = true
+                _sendTyping(true)
+                typingHeartbeat.start()
+            }
+            typingIdle.restart()
+        } else {
+            _stopTyping()
+        }
+    }
+
+    function notifyMessageSent() {
+        _typingActive = false
+        typingHeartbeat.stop()
+        typingIdle.stop()
+    }
+
+    onCurrentChatIdChanged: _stopTyping()
+
+    Timer {
+        id: typingHeartbeat
+        interval: 3000
+        repeat: true
+        onTriggered: {
+            if (_typingActive && currentChatId > 0 && currentUserId > 0) {
+                _sendTyping(true)
+            } else {
+                stop()
+            }
+        }
+    }
+
+    Timer {
+        id: typingIdle
+        interval: 4000
+        repeat: false
+        onTriggered: _stopTyping()
+    }
 
     Layout.fillWidth: true
     implicitHeight: composerContent.implicitHeight + 24
@@ -58,6 +122,7 @@ Rectangle {
                     color: "#f9fafb"
                     border.color: "#e5e7eb"
                 }
+                onTextChanged: root._handleTextChanged(text)
                 onAccepted: root.sendClicked()
             }
 

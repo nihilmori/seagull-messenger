@@ -9,6 +9,25 @@ Rectangle {
     property string subtitleText: ""
     property bool showMenu: false
     property int peerUserId: 0
+    property var typingUsers: []
+
+    function _typingText() {
+        const list = typingUsers || []
+        if (list.length === 0) {
+            return ""
+        }
+        if (list.length === 1) {
+            return (list[0].name || ("user_" + list[0].user_id)) + " печатает…"
+        }
+        if (list.length === 2) {
+            const a = list[0].name || ("user_" + list[0].user_id)
+            const b = list[1].name || ("user_" + list[1].user_id)
+            return a + " и " + b + " печатают…"
+        }
+        const a = list[0].name || ("user_" + list[0].user_id)
+        const b = list[1].name || ("user_" + list[1].user_id)
+        return a + ", " + b + " и ещё " + (list.length - 2) + " печатают…"
+    }
 
     signal renameChatClicked()
     signal addUserClicked()
@@ -95,9 +114,10 @@ Rectangle {
 
         Text {
             Layout.fillWidth: true
-            text: root.subtitleText
-            color: "#6b7280"
+            text: (root.typingUsers && root.typingUsers.length > 0) ? root._typingText() : root.subtitleText
+            color: (root.typingUsers && root.typingUsers.length > 0) ? "#2563eb" : "#6b7280"
             font.pixelSize: 12
+            font.italic: (root.typingUsers && root.typingUsers.length > 0)
             elide: Text.ElideRight
         }
     }

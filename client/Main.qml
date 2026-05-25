@@ -12,6 +12,12 @@ Window {
     title: qsTr("Seagull Client")
     color: "#f5f7fb"
 
+    palette.text: "#111827"
+    palette.windowText: "#111827"
+    palette.buttonText: "#111827"
+    palette.placeholderText: "#9ca3af"
+    palette.highlightedText: "#ffffff"
+
     QtObject {
         id: appState
         property bool isLoggedIn: false
@@ -34,6 +40,7 @@ Window {
     property var searchMessagesModel: []
     property string searchQuery: ""
     property string currentMode: "chat"
+    property var typingUsersModel: []
 
     signal openUserWall(int userId)
 
@@ -43,6 +50,34 @@ Window {
             currentMode = "wall"
             userWall.userId = userId
             userWall.loadUserProfile()
+
+    function refreshTyping() {
+        if (!appState.isLoggedIn || appState.currentChatId <= 0) {
+            typingUsersModel = []
+            return
+        }
+        WebApi.ApiClient.getTyping(appState.currentChatId, appState.currentUserId, function(status, response) {
+            if (status === 200 && response && response.typing_users) {
+                typingUsersModel = response.typing_users
+            } else if (status !== 0) {
+                typingUsersModel = []
+            }
+        })
+    }
+
+    Timer {
+        id: typingPollTimer
+        interval: 3000
+        repeat: true
+        running: appState.isLoggedIn && appState.currentChatId > 0
+        onTriggered: refreshTyping()
+    }
+
+    Connections {
+        target: appState
+        function onCurrentChatIdChanged() {
+            typingUsersModel = []
+            refreshTyping()
         }
     }
 
@@ -299,6 +334,7 @@ Window {
             WebApi.ApiClient.sendMessage(appState.currentUserId, composer.messageText, appState.currentChatId, null, function(status, response) {
                 if (status === 201) {
                     composer.messageText = ""
+                    composer.notifyMessageSent()
                     loadMessages()
                     loadChats()
                 } else {
@@ -317,6 +353,7 @@ Window {
         WebApi.ApiClient.sendMessage(appState.currentUserId, composer.messageText, 0, receiverId, function(status, response) {
             if (status === 201) {
                 composer.messageText = ""
+                composer.notifyMessageSent()
                 if (response.chat_id) {
                     appState.currentChatId = response.chat_id
                 }
@@ -423,12 +460,22 @@ Window {
 
         Dialog {
             id: createChatDialog
-            title: "Создать групповой чат"
+            title: ""
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 260) / 2
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
             width: 420
+            implicitHeight: createChatLayout.implicitHeight + 24
+            height: implicitHeight
+            background: Rectangle {
+                color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             property string errorText: ""
             onRejected: createChatDialog.close()
@@ -465,28 +512,83 @@ Window {
                 })
             }
 
-            ColumnLayout {
+            contentItem: Rectangle {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+                clip: true
 
-                TextField {
-                    id: chatNameField
-                    placeholderText: "Название чата"
-                    Layout.fillWidth: true
-                }
+                ColumnLayout {
+                    id: createChatLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                TextField {
-                    id: participantsField
-                    placeholderText: "user_id участников (через запятую)"
-                    Layout.fillWidth: true
-                }
+                    Text {
+                        text: "Создать групповой чат"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
 
-                Text {
-                    text: createChatDialog.errorText
-                    color: "#dc2626"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
+                    TextField {
+                        id: chatNameField
+                        placeholderText: "Название чата"
+                        Layout.fillWidth: true
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
+                        }
+                    }
+
+                    TextField {
+                        id: participantsField
+                        placeholderText: "user_id участников (через запятую)"
+                        Layout.fillWidth: true
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
+                        }
+                    }
+
+                    Text {
+                        text: createChatDialog.errorText
+                        color: "#dc2626"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignRight
+
+                        Button {
+                            text: "Отмена"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#f3f4f6"
+                                border.color: "#e5e7eb"
+                            }
+                            onClicked: createChatDialog.close()
+                        }
+
+                        Button {
+                            text: "Создать"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                            }
+                            onClicked: createChatDialog.submitCreateChat()
+                        }
+                    }
                 }
             }
 
@@ -511,30 +613,26 @@ Window {
                 onActivated: createChatDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Отмена"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                }
-
-                Button {
-                    text: "Создать"
-                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                    onClicked: createChatDialog.submitCreateChat()
-                }
-            }
         }
 
         Dialog {
             id: renameChatDialog
-            title: "Переименовать чат"
+            title: ""
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 220) / 2
-            width: 420
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
+            width: 360
+            implicitHeight: renameChatLayout.implicitHeight + 24
+            height: implicitHeight
+            background: Rectangle {
+                color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             property string errorText: ""
 
@@ -559,22 +657,76 @@ Window {
                 })
             }
 
-            ColumnLayout {
+            contentItem: Rectangle {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+                clip: true
 
-                TextField {
-                    id: renameChatField
-                    placeholderText: "Новое название"
-                    Layout.fillWidth: true
-                }
+                ColumnLayout {
+                    id: renameChatLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                Text {
-                    text: renameChatDialog.errorText
-                    color: "#dc2626"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
+                    Text {
+                        text: "Переименовать чат"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    TextField {
+                        id: renameChatField
+                        placeholderText: "Новое название"
+                        Layout.fillWidth: true
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
+                        }
+                    }
+
+                    Text {
+                        text: renameChatDialog.errorText
+                        color: "#dc2626"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignRight
+
+                        Button {
+                            text: "Сохранить"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                            }
+                            onClicked: renameChatDialog.submitRenameChat()
+                        }
+
+                        Button {
+                            text: "Отмена"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#f3f4f6"
+                                border.color: "#e5e7eb"
+                            }
+                            onClicked: renameChatDialog.close()
+                        }
+                    }
                 }
             }
 
@@ -599,31 +751,26 @@ Window {
                 onActivated: renameChatDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Отмена"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                    onClicked: renameChatDialog.close()
-                }
-
-                Button {
-                    text: "Сохранить"
-                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                    onClicked: renameChatDialog.submitRenameChat()
-                }
-            }
         }
 
         Dialog {
             id: addUserDialog
-            title: "Добавить участника"
+            title: ""
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 220) / 2
-            width: 420
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
+            width: 360
+            implicitHeight: addUserLayout.implicitHeight + 24
+            height: implicitHeight
+            background: Rectangle {
+                color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             property string errorText: ""
 
@@ -647,22 +794,76 @@ Window {
                 })
             }
 
-            ColumnLayout {
+            contentItem: Rectangle {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+                clip: true
 
-                TextField {
-                    id: addUserField
-                    placeholderText: "user_id участника"
-                    Layout.fillWidth: true
-                }
+                ColumnLayout {
+                    id: addUserLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                Text {
-                    text: addUserDialog.errorText
-                    color: "#dc2626"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
+                    Text {
+                        text: "Добавить участника"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    TextField {
+                        id: addUserField
+                        placeholderText: "user_id участника"
+                        Layout.fillWidth: true
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
+                        }
+                    }
+
+                    Text {
+                        text: addUserDialog.errorText
+                        color: "#dc2626"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignRight
+
+                        Button {
+                            text: "Добавить"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                            }
+                            onClicked: addUserDialog.submitAddUser()
+                        }
+
+                        Button {
+                            text: "Отмена"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#f3f4f6"
+                                border.color: "#e5e7eb"
+                            }
+                            onClicked: addUserDialog.close()
+                        }
+                    }
                 }
             }
 
@@ -687,31 +888,26 @@ Window {
                 onActivated: addUserDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Отмена"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                    onClicked: addUserDialog.close()
-                }
-
-                Button {
-                    text: "Добавить"
-                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                    onClicked: addUserDialog.submitAddUser()
-                }
-            }
         }
 
         Dialog {
             id: removeUserDialog
-            title: "Удалить участника"
+            title: ""
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 220) / 2
-            width: 420
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
+            width: 360
+            implicitHeight: removeUserLayout.implicitHeight + 24
+            height: implicitHeight
+            background: Rectangle {
+                color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             property string errorText: ""
 
@@ -735,22 +931,76 @@ Window {
                 })
             }
 
-            ColumnLayout {
+            contentItem: Rectangle {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+                clip: true
 
-                TextField {
-                    id: removeUserField
-                    placeholderText: "user_id участника"
-                    Layout.fillWidth: true
-                }
+                ColumnLayout {
+                    id: removeUserLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                Text {
-                    text: removeUserDialog.errorText
-                    color: "#dc2626"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
+                    Text {
+                        text: "Удалить участника"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    TextField {
+                        id: removeUserField
+                        placeholderText: "user_id участника"
+                        Layout.fillWidth: true
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f9fafb"
+                            border.color: "#e5e7eb"
+                        }
+                    }
+
+                    Text {
+                        text: removeUserDialog.errorText
+                        color: "#dc2626"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignRight
+
+                        Button {
+                            text: "Удалить"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                            }
+                            onClicked: removeUserDialog.submitRemoveUser()
+                        }
+
+                        Button {
+                            text: "Отмена"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#f3f4f6"
+                                border.color: "#e5e7eb"
+                            }
+                            onClicked: removeUserDialog.close()
+                        }
+                    }
                 }
             }
 
@@ -775,21 +1025,6 @@ Window {
                 onActivated: removeUserDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Отмена"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                    onClicked: removeUserDialog.close()
-                }
-
-                Button {
-                    text: "Удалить"
-                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                    onClicked: removeUserDialog.submitRemoveUser()
-                }
-            }
         }
 
         Dialog {
@@ -797,10 +1032,11 @@ Window {
             title: "Участники чата"
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 320) / 2
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
             width: 420
-            height: 320
+            height: 420
             background: Rectangle {
                 radius: 12
                 color: "#ffffff"
@@ -922,6 +1158,22 @@ Window {
                     color: "#6b7280"
                     Layout.fillWidth: true
                 }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+
+                    Button {
+                        text: "Закрыть"
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: "#f3f4f6"
+                            border.color: "#e5e7eb"
+                        }
+                        onClicked: participantsDialog.close()
+                    }
+                }
             }
 
             Shortcut {
@@ -931,44 +1183,102 @@ Window {
                 onActivated: participantsDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Закрыть"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                    onClicked: participantsDialog.close()
-                }
-            }
         }
 
         Dialog {
             id: leaveChatDialog
-            title: "Выйти из чата"
+            title: ""
             modal: true
             focus: true
-            x: (window.width - 420) / 2
-            y: (window.height - 200) / 2
-            width: 420
+            clip: true
+            x: (window.width - width) / 2
+            y: (window.height - height) / 2
+            width: 360
+            implicitHeight: leaveChatLayout.implicitHeight + 24
+            height: implicitHeight
+            background: Rectangle {
+                color: "transparent"
+            }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             property string errorText: ""
 
-            ColumnLayout {
+            contentItem: Rectangle {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                radius: 12
+                color: "#ffffff"
+                border.color: "#e5e7eb"
+                clip: true
 
-                Text {
-                    text: "Вы уверены, что хотите выйти из чата?"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
-                }
+                ColumnLayout {
+                    id: leaveChatLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
 
-                Text {
-                    text: leaveChatDialog.errorText
-                    color: "#dc2626"
-                    wrapMode: Text.Wrap
-                    Layout.fillWidth: true
+                    Text {
+                        text: "Выйти из чата"
+                        font.bold: true
+                        color: "#111827"
+                        Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: "Вы уверены, что хотите выйти из чата?"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: leaveChatDialog.errorText
+                        color: "#dc2626"
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignRight
+
+                        Button {
+                            text: "Выйти"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                            }
+                            onClicked: {
+                                leaveChatDialog.errorText = ""
+                                WebApi.ApiClient.leaveChat(appState.currentChatId, appState.currentUserId, function(status, response) {
+                                    if (status === 200) {
+                                        leaveChatDialog.close()
+                                        appState.currentChatId = -1
+                                        loadChats()
+                                        loadChatInfo()
+                                        loadMessages()
+                                        setStatus("Вы вышли из чата")
+                                    } else {
+                                        leaveChatDialog.errorText = response.error || "Не удалось выйти из чата"
+                                    }
+                                })
+                            }
+                        }
+
+                        Button {
+                            text: "Отмена"
+                            padding: 10
+                            background: Rectangle {
+                                radius: 12
+                                color: "#f3f4f6"
+                                border.color: "#e5e7eb"
+                            }
+                            onClicked: leaveChatDialog.close()
+                        }
+                    }
                 }
             }
 
@@ -979,40 +1289,11 @@ Window {
                 onActivated: leaveChatDialog.close()
             }
 
-            footer: DialogButtonBox {
-                alignment: Qt.AlignRight
-
-                Button {
-                    text: "Отмена"
-                    DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                    onClicked: leaveChatDialog.close()
-                }
-
-                Button {
-                    text: "Выйти"
-                    DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                    onClicked: {
-                        leaveChatDialog.errorText = ""
-                        WebApi.ApiClient.leaveChat(appState.currentChatId, appState.currentUserId, function(status, response) {
-                            if (status === 200) {
-                                leaveChatDialog.close()
-                                appState.currentChatId = -1
-                                loadChats()
-                                loadChatInfo()
-                                loadMessages()
-                                setStatus("Вы вышли из чата")
-                            } else {
-                                leaveChatDialog.errorText = response.error || "Не удалось выйти из чата"
-                            }
-                        })
-                    }
-                }
-            }
         }
 
         Popup {
             id: searchPopup
-            x: (window.width - 600) / 2
+            x: (window.width - width) / 2
             y: topBar.height
             width: 600
             height: 320
@@ -1133,6 +1414,20 @@ Window {
                         radius: 20
                         color: parent.checked ? "#dbeafe" : "#f3f4f6"
                         border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
+                ChatHeaderCard {
+                    titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
+                    subtitleText: appState.currentChatId > 0
+                                  ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
+                                  : "Чтобы начать личный чат, введите user_id получателя"
+                    showMenu: appState.currentChatId > 0
+                              && appState.currentChatType.toLowerCase() === "group"
+                    typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
+                    onTitleClicked: {
+                        if (appState.currentChatId > 0) {
+                            participantsDialog.open()
+                        } else {
+                            setError("Сначала выберите чат")
+                        }
                     }
                     contentItem: Text {
                         text: parent.text
@@ -1322,6 +1617,15 @@ Window {
                         userWall.userId = -1
                         userWall.userId = appState.currentUserId
                     }
+                MessageComposer {
+                    id: composer
+                    currentChatId: appState.currentChatId
+                    currentUserId: appState.currentUserId
+                    editingMessageId: window.editingMessageId
+                    errorText: window.errorText
+                    statusText: window.statusText
+                    onSendClicked: sendCurrentMessage()
+                    onCancelEditClicked: cancelEditingMessage()
                 }
             }
         }
