@@ -4,7 +4,6 @@ project(SeagullClient VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QT_QML_GENERATE_QMLLS_INI ON)
-set(CMAKE_PREFIX_PATH "/home/nihilmori/Qt/6.11.1/gcc_64" ${CMAKE_PREFIX_PATH})
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Qml QuickControls2)
 
