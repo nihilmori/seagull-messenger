@@ -4,6 +4,7 @@ project(SeagullClient VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QT_QML_GENERATE_QMLLS_INI ON)
+set(CMAKE_PREFIX_PATH "/home/nihilmori/Qt/6.11.1/gcc_64" ${CMAKE_PREFIX_PATH})
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Qml QuickControls2)
 
@@ -30,10 +31,6 @@ qt_add_qml_module(appSeagullClient
         CreatePostPanel.qml
     RESOURCES
         ApiClient.js
-        QML_FILES UserWall.qml
-        QML_FILES UserWallHeader.qml
-        QML_FILES PostCard.qml
-        QML_FILES CreatePostPanel.qml
 )
 
 target_link_libraries(appSeagullClient

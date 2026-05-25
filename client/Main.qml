@@ -50,6 +50,8 @@ Window {
             currentMode = "wall"
             userWall.userId = userId
             userWall.loadUserProfile()
+        }
+    }
 
     function refreshTyping() {
         if (!appState.isLoggedIn || appState.currentChatId <= 0) {
@@ -1414,20 +1416,6 @@ Window {
                         radius: 20
                         color: parent.checked ? "#dbeafe" : "#f3f4f6"
                         border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
-                ChatHeaderCard {
-                    titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
-                    subtitleText: appState.currentChatId > 0
-                                  ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
-                                  : "Чтобы начать личный чат, введите user_id получателя"
-                    showMenu: appState.currentChatId > 0
-                              && appState.currentChatType.toLowerCase() === "group"
-                    typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
-                    onTitleClicked: {
-                        if (appState.currentChatId > 0) {
-                            participantsDialog.open()
-                        } else {
-                            setError("Сначала выберите чат")
-                        }
                     }
                     contentItem: Text {
                         text: parent.text
@@ -1496,11 +1484,9 @@ Window {
                                       : "Чтобы начать личный чат, введите user_id получателя"
                         showMenu: appState.currentChatId > 0
                                   && appState.currentChatType.toLowerCase() === "group"
-
-                        // Добавляем свойства для личного чата
+                        typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
                         peerUserId: {
                             if (appState.currentChatId > 0 && appState.currentChatType === 'private') {
-                                // Находим ID собеседника
                                 for (var i = 0; i < participantsModel.length; i++) {
                                     if (participantsModel[i].user_id !== appState.currentUserId) {
                                         return participantsModel[i].user_id
@@ -1617,15 +1603,6 @@ Window {
                         userWall.userId = -1
                         userWall.userId = appState.currentUserId
                     }
-                MessageComposer {
-                    id: composer
-                    currentChatId: appState.currentChatId
-                    currentUserId: appState.currentUserId
-                    editingMessageId: window.editingMessageId
-                    errorText: window.errorText
-                    statusText: window.statusText
-                    onSendClicked: sendCurrentMessage()
-                    onCancelEditClicked: cancelEditingMessage()
                 }
             }
         }
