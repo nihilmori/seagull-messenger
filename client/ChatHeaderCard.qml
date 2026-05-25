@@ -8,12 +8,14 @@ Rectangle {
     property string titleText: ""
     property string subtitleText: ""
     property bool showMenu: false
+    property int peerUserId: 0
 
     signal renameChatClicked()
     signal addUserClicked()
     signal removeUserClicked()
     signal leaveChatClicked()
     signal titleClicked()
+    signal openUserWall()
 
     Layout.fillWidth: true
     height: 72
@@ -49,8 +51,8 @@ Rectangle {
 
                 MouseArea {
                     anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.titleClicked()
+                    cursorShape: root.peerUserId > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.peerUserId > 0 ? root.openUserWall() : root.titleClicked()
                 }
             }
 
@@ -111,88 +113,9 @@ Rectangle {
             border.color: "#e5e7eb"
         }
 
-        MenuItem {
-            id: renameChatItem
-            text: "Переименовать чат"
-            implicitHeight: 32
-            leftPadding: 12
-            rightPadding: 12
-            topPadding: 6
-            bottomPadding: 6
-            contentItem: Text {
-                text: renameChatItem.text
-                color: "#111827"
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: 12
-                color: renameChatItem.hovered ? "#e5e7eb" : "transparent"
-            }
-            onTriggered: root.renameChatClicked()
-        }
-
-        MenuItem {
-            id: addUserItem
-            text: "Добавить участника"
-            implicitHeight: 32
-            leftPadding: 12
-            rightPadding: 12
-            topPadding: 6
-            bottomPadding: 6
-            contentItem: Text {
-                text: addUserItem.text
-                color: "#111827"
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: 12
-                color: addUserItem.hovered ? "#e5e7eb" : "transparent"
-            }
-            onTriggered: root.addUserClicked()
-        }
-
-        MenuItem {
-            id: removeUserItem
-            text: "Удалить участника"
-            implicitHeight: 32
-            leftPadding: 12
-            rightPadding: 12
-            topPadding: 6
-            bottomPadding: 6
-            contentItem: Text {
-                text: removeUserItem.text
-                color: "#111827"
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: 12
-                color: removeUserItem.hovered ? "#e5e7eb" : "transparent"
-            }
-            onTriggered: root.removeUserClicked()
-        }
-
-        MenuItem {
-            id: leaveChatItem
-            text: "Выйти из чата"
-            implicitHeight: 32
-            leftPadding: 12
-            rightPadding: 12
-            topPadding: 6
-            bottomPadding: 6
-            contentItem: Text {
-                text: leaveChatItem.text
-                color: "#111827"
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: 12
-                color: leaveChatItem.hovered ? "#e5e7eb" : "transparent"
-            }
-            onTriggered: root.leaveChatClicked()
-        }
+        MenuItem { text: "Переименовать чат"; onTriggered: root.renameChatClicked() }
+        MenuItem { text: "Добавить участника"; onTriggered: root.addUserClicked() }
+        MenuItem { text: "Удалить участника"; onTriggered: root.removeUserClicked() }
+        MenuItem { text: "Выйти из чата"; onTriggered: root.leaveChatClicked() }
     }
 }

@@ -82,16 +82,17 @@ std::string WallPostsGetHandler::HandleRequestThrow(
         userver::formats::json::ValueBuilder posts_array = userver::formats::json::Type::kArray;
         
         for (const auto& row : posts_result) {
-            userver::formats::json::ValueBuilder post;
-            post["post_id"] = row["post_id"].As<int>();
-            post["content"] = row["content"].As<std::string>();
-            post["author_id"] = row["author_id"].As<int>();
-            post["author_name"] = row["author_name"].As<std::string>();
-            post["created_at"] = row["created_at"].As<std::string>();
-            post["updated_at"] = row["updated_at"].As<std::string>();
-            posts_array.PushBack(post.ExtractValue());
-        }
-        
+    	    userver::formats::json::ValueBuilder post;
+    	    post["post_id"] = row["post_id"].As<int>();
+    	    post["content"] = row["content"].As<std::string>();
+    	    post["author_id"] = row["author_id"].As<int>();
+    	    post["author_name"] = row["author_name"].As<std::string>();
+    	    post["created_at"] = row["created_at"].As<std::string>();
+    	    post["updated_at"] = row["updated_at"].As<std::string>();
+    
+    	    posts_array.PushBack(post.ExtractValue());
+	}   
+
         response_body["posts"] = posts_array.ExtractValue();
 
         response.SetStatus(userver::server::http::HttpStatus::kOk);

@@ -64,6 +64,8 @@ Rectangle {
                 color: root.currentChatId === modelData.chat_id ? "#dbeafe" : "#f9fafb"
                 border.color: "#e5e7eb"
 
+                property int peerUserId: modelData.peer_user_id || 0
+
                 Column {
                     anchors.fill: parent
                     anchors.margins: 10
@@ -109,7 +111,21 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.chatSelected(modelData.chat_id)
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.LeftButton) {
+                            root.chatSelected(modelData.chat_id)
+                        }
+                    }
+                    onPressed: function(mouse) {
+                        if (mouse.button === Qt.RightButton) {
+                            if (peerUserId > 0) {
+                                chatContextMenu.peerUserId = peerUserId
+                                chatContextMenu.peerName = modelData.display_name || modelData.name
+                                chatContextMenu.popup()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -155,9 +171,75 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.userSelected(modelData.user_id, modelData.name)
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: function(mouse) {
+                            if (mouse.button === Qt.LeftButton) {
+                                root.userSelected(modelData.user_id, modelData.name)
+                            }
+                        }
+                        onPressed: function(mouse) {
+                            if (mouse.button === Qt.RightButton) {
+                                searchContextMenu.userId = modelData.user_id
+                                searchContextMenu.userName = modelData.name
+                                searchContextMenu.popup()
+                            }
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    Menu {
+        id: searchContextMenu
+        property int userId: -1
+        property string userName: ""
+
+        implicitWidth: 200
+        padding: 6
+        background: Rectangle {
+            radius: 12
+            color: "#ffffff"
+            border.color: "#e5e7eb"
+        }
+
+        MenuItem {
+            text: "Открыть стену пользователя"
+            onTriggered: {
+                if (searchContextMenu.userId > 0) {
+                    window.openUserWall(searchContextMenu.userId)
+                }
+            }
+            background: Rectangle {
+                color: parent.hovered ? "#f3f4f6" : "transparent"
+                radius: 8
+            }
+        }
+    }
+
+    Menu {
+        id: chatContextMenu
+        property int peerUserId: -1
+        property string peerName: ""
+
+        implicitWidth: 200
+        padding: 6
+        background: Rectangle {
+            radius: 12
+            color: "#ffffff"
+            border.color: "#e5e7eb"
+        }
+
+        MenuItem {
+            text: "Открыть стену собеседника"
+            onTriggered: {
+                if (chatContextMenu.peerUserId > 0) {
+                    window.openUserWall(chatContextMenu.peerUserId)
+                }
+            }
+            background: Rectangle {
+                color: parent.hovered ? "#f3f4f6" : "transparent"
+                radius: 8
             }
         }
     }
