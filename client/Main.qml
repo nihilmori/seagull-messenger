@@ -1600,8 +1600,7 @@ Window {
 
                     onPostDeleted: function(postId) {
                         console.log("Post deleted:", postId)
-                        userWall.userId = -1
-                        userWall.userId = appState.currentUserId
+                        userWall.refresh()
                     }
                 }
             }
