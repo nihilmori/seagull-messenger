@@ -1569,6 +1569,7 @@ Window {
                         id: composer
                         Layout.fillWidth: true
                         currentChatId: appState.currentChatId
+                        currentUserId: appState.currentUserId
                         editingMessageId: window.editingMessageId
                         errorText: window.errorText
                         statusText: window.statusText
