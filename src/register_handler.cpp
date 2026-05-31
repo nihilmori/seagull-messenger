@@ -50,6 +50,12 @@ std::string RegisterHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'name' is required");
   }
 
+  if (name.length() < 2) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "Field 'name' must be at least 2 characters");
+  }
+
   const auto salt = utils_handler::GenerateSalt();
   const auto password_hash = userver::crypto::hash::Sha256(
       salt + password, userver::crypto::hash::OutputEncoding::kBase64);
