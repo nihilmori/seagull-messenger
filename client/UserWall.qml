@@ -11,6 +11,7 @@ ScrollView {
 
     signal postCreated(string content)
     signal postDeleted(int postId)
+    signal writeToUser(int userId)
 
     property var postsModel: []
     property var userInfo: ({})
@@ -83,6 +84,7 @@ ScrollView {
             postsCount: root.postsModel.length
             isOwnProfile: root.userId === (typeof appState !== "undefined" ? appState.currentUserId : -1)
             onEditProfileClicked: editProfileDialog.open()
+            onWriteMessageClicked: root.writeToUser(root.userId)
         }
 
         CreatePostPanel {

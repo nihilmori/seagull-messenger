@@ -13,6 +13,7 @@ Rectangle {
     property bool isOwnProfile: false
 
     signal editProfileClicked()
+    signal writeMessageClicked()
 
     Layout.fillWidth: true
     height: 140
@@ -98,6 +99,24 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
             }
             onClicked: root.editProfileClicked()
+        }
+
+        Button {
+            visible: !root.isOwnProfile
+            text: "Написать"
+            implicitWidth: 110
+            padding: 8
+            background: Rectangle {
+                radius: 20
+                color: "#dbeafe"
+                border.color: "#93c5fd"
+            }
+            contentItem: Text {
+                text: parent.text
+                color: "#1f2937"
+                horizontalAlignment: Text.AlignHCenter
+            }
+            onClicked: root.writeMessageClicked()
         }
     }
 }

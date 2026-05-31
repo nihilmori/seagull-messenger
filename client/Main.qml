@@ -1603,6 +1603,30 @@ Window {
                         console.log("Post deleted:", postId)
                         userWall.refresh()
                     }
+
+                    onWriteToUser: function(userId) {
+                        if (!userId || userId <= 0 || userId === appState.currentUserId) {
+                            return
+                        }
+                        currentMode = "chat"
+                        clearStatus()
+                        let existingChatId = -1
+                        const chats = chatsModel || []
+                        for (let i = 0; i < chats.length; i++) {
+                            const chat = chats[i]
+                            if (chat && Number(chat.peer_user_id) === userId) {
+                                existingChatId = Number(chat.chat_id)
+                                break
+                            }
+                        }
+                        if (existingChatId > 0) {
+                            appState.currentChatId = existingChatId
+                            composer.receiverText = ""
+                        } else {
+                            appState.currentChatId = -1
+                            composer.receiverText = String(userId)
+                        }
+                    }
                 }
             }
         }
