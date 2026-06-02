@@ -7,6 +7,14 @@ Rectangle {
 
     signal postCreated(string content)
 
+    function submitPost() {
+        var trimmed = postInput.text.trim()
+        if (trimmed !== "") {
+            root.postCreated(trimmed)
+            postInput.text = ""
+        }
+    }
+
     Layout.fillWidth: true
     implicitHeight: 110
     radius: 12
@@ -27,6 +35,13 @@ Rectangle {
             font.pixelSize: 14
             padding: 0
             background: Item {}
+
+            Keys.onPressed: function(event) {
+                if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !event.modifiers) {
+                    event.accepted = true
+                    root.submitPost()
+                }
+            }
         }
 
         RowLayout {
@@ -57,10 +72,7 @@ Rectangle {
                 }
 
                 onClicked: {
-                    if (postInput.text.trim() !== "") {
-                        root.postCreated(postInput.text.trim())
-                        postInput.text = ""
-                    }
+                    root.submitPost()
                 }
             }
         }

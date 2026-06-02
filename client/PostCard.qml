@@ -193,28 +193,45 @@ Rectangle {
         }
     }
 
+    function pad2(value) {
+        return value < 10 ? "0" + value : String(value)
+    }
+
     function formatDate(dateValue) {
         if (!dateValue) return ""
 
-        var dateStr = String(dateValue)
+        var dateStr = String(dateValue).trim()
+        if (!dateStr) return ""
 
-        if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-            var parts = dateStr.split(" ")
-            var dateParts = parts[0].split("-")
-            var timeParts = parts[1] ? parts[1].split(":") : []
+        if (dateStr.match(/^\d+$/)) {
+            var ts = Number(dateStr)
+            if (dateStr.length <= 10) {
+                ts *= 1000
+            }
+            var dateFromTs = new Date(ts)
+            if (!isNaN(dateFromTs.getTime())) {
+                return pad2(dateFromTs.getDate()) + "." + pad2(dateFromTs.getMonth() + 1) + "." +
+                    dateFromTs.getFullYear() + " " + pad2(dateFromTs.getHours()) + ":" + pad2(dateFromTs.getMinutes())
+            }
+        }
 
-            var formatted = dateParts[2] + "." + dateParts[1] + "." + dateParts[0]
-            if (timeParts.length >= 2) {
-                formatted += " " + timeParts[0] + ":" + timeParts[1]
+        var match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/)
+        if (match) {
+            var formatted = match[3] + "." + match[2] + "." + match[1]
+            if (match[4] && match[5]) {
+                formatted += " " + match[4] + ":" + match[5]
             }
             return formatted
         }
 
-        if (dateStr.includes("��")) {
-            var now = new Date()
-            return now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear()
+        var normalized = dateStr.replace(" ", "T")
+        var parsed = Date.parse(normalized)
+        if (!isNaN(parsed)) {
+            var dateFromParsed = new Date(parsed)
+            return pad2(dateFromParsed.getDate()) + "." + pad2(dateFromParsed.getMonth() + 1) + "." +
+                dateFromParsed.getFullYear() + " " + pad2(dateFromParsed.getHours()) + ":" + pad2(dateFromParsed.getMinutes())
         }
 
-        return dateStr
+        return ""
     }
 }
