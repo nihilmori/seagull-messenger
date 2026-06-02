@@ -1144,10 +1144,16 @@ Window {
 
                         MouseArea {
                             anchors.fill: parent
-                            acceptedButtons: Qt.RightButton
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: function(mouse) {
                                 if (mouse.button === Qt.RightButton) {
                                     participantMenu.popup()
+                                    return
+                                }
+                                if (mouse.button === Qt.LeftButton && modelData && modelData.user_id) {
+                                    participantsDialog.close()
+                                    window.openUserWall(modelData.user_id)
                                 }
                             }
                         }
@@ -1376,13 +1382,11 @@ Window {
                                 })
 
                                 if (existing && existing.chat_id) {
+                                    currentMode = "chat"
                                     composer.receiverText = ""
                                     selectChat(existing.chat_id)
                                 } else {
-                                    if (appState.currentChatId > 0) {
-                                        appState.currentChatId = -1
-                                    }
-                                    composer.receiverText = String(userId)
+                                    window.openUserWall(targetUserId)
                                 }
                                 sidebar.searchText = ""
                                 loadSearchUsers("")
