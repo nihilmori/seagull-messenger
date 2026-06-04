@@ -41,6 +41,7 @@ Window {
     property var searchMessagesModel: []
     property string searchQuery: ""
     property string currentMode: "chat"
+    onCurrentModeChanged: clearStatus()
     property var typingUsersModel: []
 
     signal openUserWall(int userId)
