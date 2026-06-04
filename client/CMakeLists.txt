@@ -13,6 +13,8 @@ qt_add_executable(appSeagullClient
     main.cpp
 )
 
+set_source_files_properties(Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(appSeagullClient
     URI SeagullClient
     VERSION 1.0
@@ -28,6 +30,8 @@ qt_add_qml_module(appSeagullClient
         UserWallHeader.qml
         PostCard.qml
         CreatePostPanel.qml
+        EmojiPicker.qml
+        Theme.qml
     RESOURCES
         ApiClient.js
 )

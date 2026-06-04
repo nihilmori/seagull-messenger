@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 import "ApiClient.js" as WebApi
 
 ScrollView {
@@ -99,7 +100,7 @@ ScrollView {
             text: "Посты"
             font.pixelSize: 16
             font.bold: true
-            color: "#111827"
+            color: Theme.textPrimary
             Layout.fillWidth: true
             Layout.topMargin: 8
         }
@@ -141,7 +142,7 @@ ScrollView {
             Text {
                 anchors.centerIn: parent
                 text: "Загрузка..."
-                color: "#6b7280"
+                color: Theme.textMuted
             }
         }
 
@@ -154,7 +155,7 @@ ScrollView {
             Text {
                 anchors.centerIn: parent
                 text: "Нет постов. Будьте первым!"
-                color: "#9ca3af"
+                color: Theme.textFaint
                 font.pixelSize: 14
             }
         }
@@ -181,10 +182,12 @@ ScrollView {
                 text: root.userInfo.name || ""
                 Layout.fillWidth: true
                 padding: 10
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
                 background: Rectangle {
                     radius: 10
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
                 }
             }
 
@@ -196,16 +199,18 @@ ScrollView {
                 Layout.minimumHeight: 80
                 wrapMode: Text.WordWrap
                 padding: 10
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
                 background: Rectangle {
                     radius: 10
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
                 }
             }
 
             Text {
                 text: editProfileDialog.errorText
-                color: "#dc2626"
+                color: Theme.error
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
             }

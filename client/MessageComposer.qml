@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 import "ApiClient.js" as WebApi
 
 Rectangle {
@@ -12,7 +13,7 @@ Rectangle {
     property string errorText: ""
     property string statusText: ""
 
-    property alias receiverText: privateReceiverField.text
+    property string receiverText: ""
     property alias messageText: messageField.text
 
     property bool _typingActive: false
@@ -84,8 +85,8 @@ Rectangle {
     implicitHeight: composerContent.implicitHeight + 24
     Layout.minimumHeight: implicitHeight
     radius: 10
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     ColumnLayout {
         id: composerContent
@@ -97,17 +98,24 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 8
 
-            TextField {
-                id: privateReceiverField
-                placeholderText: "user_id для личного чата"
-                visible: root.currentChatId <= 0 && root.editingMessageId <= 0
-                Layout.preferredWidth: 200
-                padding: 10
+            Button {
+                id: emojiButton
+                text: "😊"
+                padding: 6
+                implicitWidth: 40
+                implicitHeight: 40
                 background: Rectangle {
                     radius: 12
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: emojiButton.hovered ? Theme.hover : Theme.hoverSubtle
+                    border.color: Theme.border
                 }
+                contentItem: Text {
+                    text: emojiButton.text
+                    font.pixelSize: 22
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: emojiPicker.opened ? emojiPicker.close() : emojiPicker.open()
             }
 
             TextField {
@@ -117,36 +125,70 @@ Rectangle {
                                  : (root.currentChatId > 0 ? "Введите сообщение в чат" : "Введите сообщение для личного чата")
                 Layout.fillWidth: true
                 padding: 10
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
                 background: Rectangle {
                     radius: 12
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
                 }
                 onTextChanged: root._handleTextChanged(text)
                 onAccepted: root.sendClicked()
             }
 
             Button {
-                text: root.editingMessageId > 0 ? "Сохранить" : "Отправить"
-                padding: 10
+                id: sendButton
+                text: root.editingMessageId > 0 ? "✓" : "➤"
+                padding: 6
+                implicitWidth: 40
+                implicitHeight: 40
                 background: Rectangle {
                     radius: 12
-                    color: "#dbeafe"
-                    border.color: "#93c5fd"
+                    color: sendButton.hovered ? Theme.bubbleOutBorder : Theme.bubbleOut
+                    border.color: Theme.bubbleOutBorder
+                }
+                contentItem: Text {
+                    text: sendButton.text
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: Theme.bubbleOutText
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: root.sendClicked()
             }
 
             Button {
-                text: "Отмена"
+                id: cancelButton
+                text: "✕"
                 visible: root.editingMessageId > 0
-                padding: 10
+                padding: 6
+                implicitWidth: 40
+                implicitHeight: 40
                 background: Rectangle {
                     radius: 12
-                    color: "#f3f4f6"
-                    border.color: "#e5e7eb"
+                    color: cancelButton.hovered ? Theme.hover : Theme.hoverSubtle
+                    border.color: Theme.border
+                }
+                contentItem: Text {
+                    text: cancelButton.text
+                    font.pixelSize: 18
+                    color: Theme.textMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: root.cancelEditClicked()
+            }
+        }
+
+        EmojiPicker {
+            id: emojiPicker
+            x: 0
+            y: -height - 6
+            onEmojiSelected: function(emoji) {
+                messageField.text = messageField.text + emoji
+                messageField.forceActiveFocus()
+                messageField.cursorPosition = messageField.text.length
             }
         }
 
@@ -155,14 +197,14 @@ Rectangle {
 
             Text {
                 text: root.errorText
-                color: "#dc2626"
+                color: Theme.error
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
             }
 
             Text {
                 text: root.statusText
-                color: "#059669"
+                color: Theme.success
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignRight
                 wrapMode: Text.Wrap

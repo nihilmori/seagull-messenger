@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -10,8 +11,8 @@ Rectangle {
     Layout.fillWidth: true
     implicitHeight: 110
     radius: 12
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     ColumnLayout {
         anchors.fill: parent
@@ -26,6 +27,8 @@ Rectangle {
             Layout.fillHeight: true
             font.pixelSize: 14
             padding: 0
+            color: Theme.textPrimary
+            placeholderTextColor: Theme.textFaint
             background: Item {}
         }
 
@@ -35,7 +38,7 @@ Rectangle {
             Text {
                 text: "Нажмите Enter для отправки"
                 font.pixelSize: 10
-                color: "#9ca3af"
+                color: Theme.textFaint
             }
 
             Item { Layout.fillWidth: true }
@@ -47,13 +50,13 @@ Rectangle {
 
                 background: Rectangle {
                     radius: 20
-                    color: parent.enabled ? "#dbeafe" : "#f3f4f6"
-                    border.color: parent.enabled ? "#93c5fd" : "#e5e7eb"
+                    color: parent.enabled ? Theme.bubbleOut : Theme.hoverSubtle
+                    border.color: parent.enabled ? Theme.bubbleOutBorder : Theme.border
                 }
 
                 contentItem: Text {
                     text: parent.text
-                    color: parent.enabled ? "#2563eb" : "#9ca3af"
+                    color: parent.enabled ? Theme.accent : Theme.textFaint
                 }
 
                 onClicked: {

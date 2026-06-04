@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -15,8 +16,8 @@ Rectangle {
     signal userSelected(int userId, string name)
 
     width: 340
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     ColumnLayout {
         anchors.fill: parent
@@ -28,10 +29,12 @@ Rectangle {
             placeholderText: "Поиск пользователей"
             Layout.fillWidth: true
             padding: 10
+            color: Theme.textPrimary
+            placeholderTextColor: Theme.textFaint
             background: Rectangle {
                 radius: 12
-                color: "#f9fafb"
-                border.color: "#e5e7eb"
+                color: Theme.inputBg
+                border.color: Theme.border
             }
         }
 
@@ -49,8 +52,8 @@ Rectangle {
                 width: chatsList.width
                 height: 64
                 radius: 10
-                color: root.currentChatId === modelData.chat_id ? "#dbeafe" : "#f9fafb"
-                border.color: "#e5e7eb"
+                color: root.currentChatId === modelData.chat_id ? Theme.bubbleOut : Theme.inputBg
+                border.color: Theme.border
 
                 property int peerUserId: modelData.peer_user_id || 0
 
@@ -65,7 +68,7 @@ Rectangle {
 
                         Text {
                             text: modelData.display_name || modelData.name || ("Чат #" + modelData.chat_id)
-                            color: "#111827"
+                            color: Theme.textPrimary
                             font.bold: true
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -74,7 +77,7 @@ Rectangle {
                         Rectangle {
                             visible: modelData.unread_count > 0
                             radius: 9
-                            color: "#2563eb"
+                            color: Theme.accent
                             Layout.minimumWidth: 18
                             Layout.preferredHeight: 18
                             Layout.alignment: Qt.AlignVCenter
@@ -90,7 +93,7 @@ Rectangle {
 
                     Text {
                         text: modelData.last_message_at || "Нет сообщений"
-                        color: "#6b7280"
+                        color: Theme.textMuted
                         font.pixelSize: 12
                         elide: Text.ElideRight
                     }
@@ -126,7 +129,7 @@ Rectangle {
             Text {
                 text: "Результаты поиска пользователей"
                 font.bold: true
-                color: "#111827"
+                color: Theme.textPrimary
             }
 
             ListView {
@@ -141,8 +144,8 @@ Rectangle {
                     width: parent.width
                     height: 38
                     radius: 8
-                    color: "#f8fafc"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
 
                     RowLayout {
                         anchors.fill: parent
@@ -150,7 +153,7 @@ Rectangle {
 
                         Text {
                             text: modelData.name + " (" + modelData.user_id + ")"
-                            color: "#111827"
+                            color: Theme.textPrimary
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
@@ -187,8 +190,8 @@ Rectangle {
         padding: 6
         background: Rectangle {
             radius: 12
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         MenuItem {
@@ -198,8 +201,13 @@ Rectangle {
                     window.openUserWall(searchContextMenu.userId)
                 }
             }
+            contentItem: Text {
+                text: parent.text
+                color: Theme.textPrimary
+                verticalAlignment: Text.AlignVCenter
+            }
             background: Rectangle {
-                color: parent.hovered ? "#f3f4f6" : "transparent"
+                color: parent.hovered ? Theme.hover : "transparent"
                 radius: 8
             }
         }
@@ -214,8 +222,8 @@ Rectangle {
         padding: 6
         background: Rectangle {
             radius: 12
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         MenuItem {
@@ -225,8 +233,13 @@ Rectangle {
                     window.openUserWall(chatContextMenu.peerUserId)
                 }
             }
+            contentItem: Text {
+                text: parent.text
+                color: Theme.textPrimary
+                verticalAlignment: Text.AlignVCenter
+            }
             background: Rectangle {
-                color: parent.hovered ? "#f3f4f6" : "transparent"
+                color: parent.hovered ? Theme.hover : "transparent"
                 radius: 8
             }
         }

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -11,8 +12,8 @@ Rectangle {
     signal searchTextChanged(string text)
 
     height: 64
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     RowLayout {
         anchors.fill: parent
@@ -23,7 +24,7 @@ Rectangle {
             text: "Seagull Messenger"
             font.pixelSize: 20
             font.bold: true
-            color: "#111827"
+            color: Theme.textPrimary
             Layout.alignment: Qt.AlignVCenter
         }
 
@@ -34,23 +35,25 @@ Rectangle {
             placeholderText: "Поиск сообщений"
             Layout.preferredWidth: 320
             padding: 10
+            color: Theme.textPrimary
+            placeholderTextColor: Theme.textFaint
             background: Rectangle {
                 radius: 12
-                color: "#f9fafb"
-                border.color: "#e5e7eb"
+                color: Theme.inputBg
+                border.color: Theme.border
             }
             onTextChanged: root.searchTextChanged(text)
         }
 
         Text {
             text: root.userLabel
-            color: "#6b7280"
+            color: Theme.textMuted
             Layout.alignment: Qt.AlignVCenter
         }
 
         Button {
             id: menuButton
-            
+
             Layout.preferredWidth: 32
             Layout.preferredHeight: 32
             Layout.fillHeight: false
@@ -58,12 +61,12 @@ Rectangle {
 
             padding: 0
             background: Rectangle {
-                color: menuButton.hovered ? "#f3f4f6" : "transparent"
+                color: menuButton.hovered ? Theme.hoverSubtle : "transparent"
                 radius: 4
             }
 
             contentItem: Item {
-                
+
                 Column {
                     anchors.centerIn: parent
                     spacing: 4
@@ -75,7 +78,7 @@ Rectangle {
                             width: 18
                             height: 2
                             radius: 1
-                            color: "#111827"
+                            color: Theme.textPrimary
                         }
                     }
                 }
@@ -91,8 +94,8 @@ Rectangle {
         clip: true
         background: Rectangle {
             radius: 12
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         MenuItem {
@@ -105,15 +108,36 @@ Rectangle {
             bottomPadding: 6
             contentItem: Text {
                 text: createChatMenuItem.text
-                color: "#111827"
+                color: Theme.textPrimary
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
             background: Rectangle {
                 radius: 12
-                color: createChatMenuItem.hovered ? "#e5e7eb" : "transparent"
+                color: createChatMenuItem.hovered ? Theme.hover : "transparent"
             }
             onTriggered: root.createChatClicked()
+        }
+
+        MenuItem {
+            id: darkThemeMenuItem
+            text: Theme.isDark ? "Светлая тема" : "Тёмная тема"
+            implicitHeight: 32
+            leftPadding: 12
+            rightPadding: 12
+            topPadding: 6
+            bottomPadding: 6
+            contentItem: Text {
+                text: darkThemeMenuItem.text
+                color: Theme.textPrimary
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+            background: Rectangle {
+                radius: 12
+                color: darkThemeMenuItem.hovered ? Theme.hover : "transparent"
+            }
+            onTriggered: Theme.toggle()
         }
 
         MenuItem {
@@ -126,13 +150,13 @@ Rectangle {
             bottomPadding: 6
             contentItem: Text {
                 text: logoutMenuItem.text
-                color: "#111827"
+                color: Theme.textPrimary
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
             background: Rectangle {
                 radius: 12
-                color: logoutMenuItem.hovered ? "#e5e7eb" : "transparent"
+                color: logoutMenuItem.hovered ? Theme.hover : "transparent"
             }
             onTriggered: root.logoutClicked()
         }

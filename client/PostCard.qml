@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -20,8 +21,8 @@ Rectangle {
     Layout.fillWidth: true
     height: column.implicitHeight + 24
     radius: 12
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     property bool pendingDelete: false
 
@@ -38,7 +39,7 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: "#f8fafc"
+        color: Theme.hoverSubtle
         opacity: cardMouseArea.containsMouse ? 0.5 : 0
         Behavior on opacity { NumberAnimation { duration: 150 } }
     }
@@ -64,14 +65,14 @@ Rectangle {
                 width: 40
                 height: 40
                 radius: 20
-                color: "#f3f4f6"
+                color: Theme.hoverSubtle
 
                 Text {
                     anchors.centerIn: parent
                     text: root.authorName ? root.authorName.charAt(0).toUpperCase() : "?"
                     font.pixelSize: 18
                     font.bold: true
-                    color: "#6b7280"
+                    color: Theme.textMuted
                 }
 
                 MouseArea {
@@ -89,7 +90,7 @@ Rectangle {
                     text: root.authorName
                     font.bold: true
                     font.pixelSize: 15
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     Layout.fillWidth: true
 
@@ -107,26 +108,26 @@ Rectangle {
                     Text {
                         text: "@" + root.authorLogin
                         font.pixelSize: 12
-                        color: "#6b7280"
+                        color: Theme.textMuted
                     }
 
                     Text {
                         text: "•"
                         font.pixelSize: 12
-                        color: "#9ca3af"
+                        color: Theme.textFaint
                     }
 
                     Text {
                         text: formatDate(root.createdAt)
                         font.pixelSize: 12
-                        color: "#9ca3af"
+                        color: Theme.textFaint
                     }
                 }
 
                 Text {
                     text: formatDate(root.createdAt)
                     font.pixelSize: 12
-                    color: "#9ca3af"
+                    color: Theme.textFaint
                     visible: root.authorLogin === ""
                 }
             }
@@ -187,7 +188,7 @@ Rectangle {
             text: root.content
             wrapMode: Text.WordWrap
             font.pixelSize: 14
-            color: "#1f2937"
+            color: Theme.textBody
             Layout.fillWidth: true
             lineHeight: 1.4
         }

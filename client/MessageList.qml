@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 ListView {
     id: root
@@ -78,8 +79,8 @@ ListView {
             id: bubble
 
             radius: 10
-            color: delegateRoot.isOutgoing ? "#dbeafe" : "#f3f4f6"
-            border.color: "#e5e7eb"
+            color: delegateRoot.isOutgoing ? Theme.bubbleOut : Theme.bubbleIn
+            border.color: delegateRoot.isOutgoing ? Theme.bubbleOutBorder : Theme.bubbleInBorder
 
             anchors.top: parent.top
             anchors.margins: 4
@@ -98,7 +99,7 @@ ListView {
                 Text {
                     id: senderNameText
                     text: root.senderName(modelData.sender_id)
-                    color: "#374151"
+                    color: Theme.textBody
                     font.pixelSize: 12
                     font.bold: true
                     visible: !delegateRoot.isOutgoing
@@ -112,14 +113,14 @@ ListView {
                     id: messageText
                     text: modelData.content
                     wrapMode: Text.Wrap
-                    color: "#111827"
+                    color: delegateRoot.isOutgoing ? Theme.bubbleOutText : Theme.textPrimary
                     width: parent.width
                 }
 
                 Text {
                     id: timeText
                     text: root.formatSentAt(modelData.sent_at)
-                    color: "#6b7280"
+                    color: Theme.textMuted
                     font.pixelSize: 12
                     horizontalAlignment: delegateRoot.isOutgoing ? Text.AlignRight : Text.AlignLeft
                     width: parent.width
@@ -135,8 +136,8 @@ ListView {
                 clip: true
                 background: Rectangle {
                     radius: 12
-                    color: "#ffffff"
-                    border.color: "#e5e7eb"
+                    color: Theme.bgSecondary
+                    border.color: Theme.border
                 }
                 MenuItem {
                     id: editMessageItem
@@ -148,13 +149,13 @@ ListView {
                     bottomPadding: 6
                     contentItem: Text {
                         text: editMessageItem.text
-                        color: "#111827"
+                        color: Theme.textPrimary
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
                     background: Rectangle {
                         radius: 12
-                        color: editMessageItem.hovered ? "#e5e7eb" : "transparent"
+                        color: editMessageItem.hovered ? Theme.hover : "transparent"
                     }
                     onTriggered: root.editMessageRequested(modelData.message_id, modelData.content)
                 }
@@ -169,13 +170,13 @@ ListView {
                     bottomPadding: 6
                     contentItem: Text {
                         text: deleteMessageItem.text
-                        color: "#111827"
+                        color: Theme.textPrimary
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
                     background: Rectangle {
                         radius: 12
-                        color: deleteMessageItem.hovered ? "#e5e7eb" : "transparent"
+                        color: deleteMessageItem.hovered ? Theme.hover : "transparent"
                     }
                     onTriggered: root.deleteMessageRequested(modelData.message_id)
                 }

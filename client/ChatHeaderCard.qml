@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -39,8 +40,8 @@ Rectangle {
     Layout.fillWidth: true
     height: 72
     radius: 10
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
     clip: true
 
     ColumnLayout {
@@ -63,7 +64,7 @@ Rectangle {
                     text: root.titleText
                     font.pixelSize: 18
                     font.bold: true
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -88,7 +89,7 @@ Rectangle {
                 flat: true
 
                 background: Rectangle {
-                    color: chatMenuButton.hovered ? "#f3f4f6" : "transparent"
+                    color: chatMenuButton.hovered ? Theme.hoverSubtle : "transparent"
                     radius: 16
                 }
                 contentItem: Item {
@@ -103,7 +104,7 @@ Rectangle {
                                 width: 4
                                 height: 4
                                 radius: 2
-                                color: "#111827"
+                                color: Theme.textPrimary
                             }
                         }
                     }
@@ -115,7 +116,7 @@ Rectangle {
         Text {
             Layout.fillWidth: true
             text: (root.typingUsers && root.typingUsers.length > 0) ? root._typingText() : root.subtitleText
-            color: (root.typingUsers && root.typingUsers.length > 0) ? "#2563eb" : "#6b7280"
+            color: (root.typingUsers && root.typingUsers.length > 0) ? Theme.accent : Theme.textMuted
             font.pixelSize: 12
             font.italic: (root.typingUsers && root.typingUsers.length > 0)
             elide: Text.ElideRight
@@ -129,8 +130,8 @@ Rectangle {
         clip: true
         background: Rectangle {
             radius: 12
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         MenuItem { text: "Переименовать чат"; onTriggered: root.renameChatClicked() }
