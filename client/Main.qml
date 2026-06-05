@@ -350,7 +350,7 @@ Window {
 
         const receiverId = Number.parseInt(composer.receiverText, 10)
         if (!receiverId || receiverId <= 0) {
-            setError("Укажите user_id получателя для личного чата")
+            setError("Сначала выберите чат")
             return
         }
 
@@ -1641,7 +1641,7 @@ Window {
                         titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
                         subtitleText: appState.currentChatId > 0
                                       ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
-                                      : "Чтобы начать личный чат, введите user_id получателя"
+                                      : ""
                         showMenu: appState.currentChatId > 0
                                   && appState.currentChatType.toLowerCase() === "group"
                         typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
