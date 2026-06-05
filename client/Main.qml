@@ -82,6 +82,7 @@ Window {
         function onCurrentChatIdChanged() {
             typingUsersModel = []
             refreshTyping()
+            clearStatus()
         }
     }
 

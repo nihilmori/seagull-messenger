@@ -60,7 +60,6 @@ ScrollView {
             if (status === 200) {
                 root.postDeleted(postId)
                 refresh()
-                if (typeof setStatus === "function") setStatus("Пост удалён")
             } else {
                 if (typeof setError === "function") setError(response.error || "Не удалось удалить пост")
             }
