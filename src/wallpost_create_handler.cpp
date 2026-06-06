@@ -81,7 +81,8 @@ std::string WallPostCreateHandler::HandleRequestThrow(
             userver::storages::postgres::ClusterHostType::kMaster,
             "INSERT INTO seagull_schema.wall_posts (user_id, author_id, content) "
             "VALUES ($1, $2, $3) "
-            "RETURNING post_id, created_at",
+            "RETURNING post_id, "
+            "to_char(created_at AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS') AS created_at",
             wall_owner_id, author_id, content);
 
         if (insert_result.IsEmpty()) {

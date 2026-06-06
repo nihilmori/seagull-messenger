@@ -16,6 +16,16 @@ ScrollView {
 
     property var postsModel: []
     property var userInfo: ({})
+    property string searchQuery: ""
+
+    readonly property var filteredPostsModel: {
+        const list = postsModel || []
+        const q = (searchQuery || "").trim().toLowerCase()
+        if (!q) return list
+        return list.filter(function(p) {
+            return p && String(p.content || "").toLowerCase().indexOf(q) >= 0
+        })
+    }
 
     function loadUserProfile() {
         if (root.userId <= 0) return
@@ -105,7 +115,7 @@ ScrollView {
         }
 
         Repeater {
-            model: root.postsModel
+            model: root.filteredPostsModel
 
             delegate: PostCard {
                 required property var modelData
@@ -154,6 +164,23 @@ ScrollView {
             Text {
                 anchors.centerIn: parent
                 text: "Нет постов. Будьте первым!"
+                color: Theme.textFaint
+                font.pixelSize: 14
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 60
+            color: "transparent"
+            visible: !root.isLoading
+                     && root.postsModel.length > 0
+                     && root.filteredPostsModel.length === 0
+                     && root.searchQuery.trim().length > 0
+
+            Text {
+                anchors.centerIn: parent
+                text: "По запросу ничего не найдено"
                 color: Theme.textFaint
                 font.pixelSize: 14
             }

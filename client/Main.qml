@@ -1752,6 +1752,8 @@ Window {
                         WebApi.ApiClient.createPost(currentWallOwnerId, appState.currentUserId, content, function(status, response) {
                             console.log("Create post response status:", status)
                             if (status === 201) {
+                                wallSearchField.text = ""
+                                userWall.searchQuery = ""
                                 setStatus("Пост опубликован на стене пользователя")
                                 userWall.refresh()
                             } else {
