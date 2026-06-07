@@ -389,3 +389,263 @@ async def test_delete_message_forbidden_for_non_sender(service_client, pgsql):
         json={'user_id': other_id},
     )
     assert response.status_code == 403
+
+
+# --- Дополнительные тесты ---
+
+
+# Регистрация: пароль не соответствует требованиям -> 400.
+async def test_register_invalid_password(service_client, pgsql):
+    response = await _register_user(service_client, 'weak_pwd_user', password='short')
+    assert response.status_code == 400
+
+
+# Регистрация: имя короче 2 символов -> 400.
+async def test_register_short_name(service_client, pgsql):
+    response = await _register_user(service_client, 'short_name_user', name='X')
+    assert response.status_code == 400
+
+
+# Логин: несуществующий пользователь -> 401.
+async def test_login_unknown_user(service_client, pgsql):
+    response = await service_client.post(
+        '/api/login',
+        json={'login': 'nobody_here', 'password': 'AnyPass123'},
+    )
+    assert response.status_code == 401
+
+
+# Профиль: несуществующий user_id -> 404.
+async def test_get_user_profile_not_found(service_client, pgsql):
+    response = await service_client.get('/api/user/profile?user_id=999999')
+    assert response.status_code == 404
+
+
+# Профиль: попытка занять уже существующий логин -> 409.
+async def test_update_user_profile_login_taken(service_client, pgsql):
+    await _register_user(service_client, 'taken_login')
+    user_id = (await _register_user(service_client, 'login_changer')).json()['user_id']
+    response = await service_client.patch(
+        '/api/user/profile',
+        json={'user_id': user_id, 'login': 'taken_login'},
+    )
+    assert response.status_code == 409
+
+
+# Поиск пользователей: запрос короче 2 символов -> 400.
+async def test_search_users_short_query(service_client, pgsql):
+    response = await service_client.get('/api/users/search?query=a')
+    assert response.status_code == 400
+
+
+# Информация о чате: пользователь не участник -> 403.
+async def test_get_chat_info_not_participant(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'info_owner')).json()['user_id']
+    other_id = (await _register_user(service_client, 'info_other')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Private Group')).json()['chat_id']
+
+    response = await service_client.get(f'/api/chat/{chat_id}?user_id={other_id}')
+    assert response.status_code == 403
+
+
+# Добавление в чат: пользователь уже в чате -> 409.
+async def test_add_user_already_in_chat(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'dup_add_owner')).json()['user_id']
+    guest_id = (await _register_user(service_client, 'dup_add_guest')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Dup Add')).json()['chat_id']
+
+    await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/users/add',
+        json={'requester_id': owner_id, 'user_id': guest_id},
+    )
+    assert response.status_code == 409
+
+
+# Удаление участника: нельзя удалить самого себя -> 400.
+async def test_remove_self_from_chat(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'self_remove')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Self Remove')).json()['chat_id']
+
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/users/remove',
+        json={'requester_id': owner_id, 'user_id': owner_id},
+    )
+    assert response.status_code == 400
+
+
+# Выход из чата: запрещён в приватном чате -> 400.
+async def test_leave_private_chat_forbidden(service_client, pgsql):
+    sender_id = (await _register_user(service_client, 'leave_priv_a')).json()['user_id']
+    receiver_id = (await _register_user(service_client, 'leave_priv_b')).json()['user_id']
+
+    send_resp = await service_client.post(
+        '/api/messages/send',
+        json={
+            'sender_id': sender_id,
+            'receiver_id': receiver_id,
+            'chat_id': 0,
+            'content': 'hi',
+        },
+    )
+    chat_id = send_resp.json()['chat_id']
+
+    response = await service_client.post(
+        f'/api/chat/{chat_id}/leave',
+        json={'user_id': sender_id},
+    )
+    assert response.status_code == 400
+
+
+# Отправка сообщения: пустой content -> 400.
+async def test_send_message_blank_content(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'blank_sender')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, user_id, 'Blank Chat')).json()['chat_id']
+
+    response = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': user_id, 'chat_id': chat_id, 'content': ''},
+    )
+    assert response.status_code == 400
+
+
+# Отправка сообщения: отправитель не участник чата -> 403.
+async def test_send_message_not_participant(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'snd_owner')).json()['user_id']
+    other_id = (await _register_user(service_client, 'snd_other')).json()['user_id']
+    chat_id = (await _create_group_chat(service_client, owner_id, 'Closed Chat')).json()['chat_id']
+
+    response = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': other_id, 'chat_id': chat_id, 'content': 'sneak'},
+    )
+    assert response.status_code == 403
+
+
+# Непрочитанные сообщения: после отправки чужого сообщения unread > 0.
+async def test_get_unread_messages(service_client, pgsql):
+    a_id = (await _register_user(service_client, 'unread_a')).json()['user_id']
+    b_id = (await _register_user(service_client, 'unread_b')).json()['user_id']
+
+    await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': a_id, 'receiver_id': b_id, 'chat_id': 0, 'content': 'ping'},
+    )
+
+    response = await service_client.get(f'/api/messages/unread?user_id={b_id}')
+    assert response.status_code == 200
+    assert response.json()['total_unread'] >= 1
+
+
+# Отметка прочитанным: после mark unread обнуляется.
+async def test_mark_messages_read(service_client, pgsql):
+    a_id = (await _register_user(service_client, 'read_a')).json()['user_id']
+    b_id = (await _register_user(service_client, 'read_b')).json()['user_id']
+
+    send_resp = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': a_id, 'receiver_id': b_id, 'chat_id': 0, 'content': 'mark me'},
+    )
+    chat_id = send_resp.json()['chat_id']
+
+    mark_resp = await service_client.post(
+        '/api/messages/read',
+        json={'user_id': b_id, 'chat_id': chat_id},
+    )
+    assert mark_resp.status_code == 200
+
+    unread = await service_client.get(f'/api/messages/unread?user_id={b_id}')
+    assert unread.json()['total_unread'] == 0
+
+
+# Статус печати: после set is_typing=true собеседник видит запись.
+async def test_set_and_get_typing(service_client, pgsql):
+    a_id = (await _register_user(service_client, 'type_a')).json()['user_id']
+    b_id = (await _register_user(service_client, 'type_b')).json()['user_id']
+
+    send_resp = await service_client.post(
+        '/api/messages/send',
+        json={'sender_id': a_id, 'receiver_id': b_id, 'chat_id': 0, 'content': 'open chat'},
+    )
+    chat_id = send_resp.json()['chat_id']
+
+    set_resp = await service_client.post(
+        f'/api/chat/{chat_id}/typing',
+        json={'chat_id': chat_id, 'user_id': a_id, 'is_typing': True},
+    )
+    assert set_resp.status_code == 200
+
+    get_resp = await service_client.get(
+        f'/api/chat/{chat_id}/typing?chat_id={chat_id}&user_id={b_id}',
+    )
+    assert get_resp.status_code == 200
+    typing = get_resp.json()
+    assert typing['count'] >= 1
+    assert any(u['user_id'] == a_id for u in typing['typing_users'])
+
+
+# Стена: создание поста -> 201.
+async def test_wall_create_post(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'wall_owner')).json()['user_id']
+    author_id = (await _register_user(service_client, 'wall_author')).json()['user_id']
+
+    response = await service_client.post(
+        f'/api/wall/{owner_id}/post',
+        json={'author_id': author_id, 'content': 'Привет на стене'},
+    )
+    assert response.status_code == 201
+    assert response.json()['post_id'] > 0
+
+
+# Стена: получение постов после публикации.
+async def test_wall_get_posts(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'wall_get_owner')).json()['user_id']
+    author_id = (await _register_user(service_client, 'wall_get_author')).json()['user_id']
+
+    await service_client.post(
+        f'/api/wall/{owner_id}/post',
+        json={'author_id': author_id, 'content': 'first post'},
+    )
+
+    response = await service_client.get(f'/api/wall/{owner_id}/posts')
+    assert response.status_code == 200
+    assert response.json()['count'] >= 1
+
+
+# Стена: автор удаляет свой пост -> 200.
+async def test_wall_delete_own_post(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'wall_del_owner')).json()['user_id']
+    author_id = (await _register_user(service_client, 'wall_del_author')).json()['user_id']
+
+    create_resp = await service_client.post(
+        f'/api/wall/{owner_id}/post',
+        json={'author_id': author_id, 'content': 'to delete'},
+    )
+    post_id = create_resp.json()['post_id']
+
+    delete_resp = await service_client.delete(
+        f'/api/wall/post/{post_id}?user_id={author_id}',
+    )
+    assert delete_resp.status_code == 200
+    assert delete_resp.json()['deleted'] is True
+
+
+# Стена: посторонний пользователь не может удалить пост -> 403.
+async def test_wall_delete_post_forbidden(service_client, pgsql):
+    owner_id = (await _register_user(service_client, 'wall_fb_owner')).json()['user_id']
+    author_id = (await _register_user(service_client, 'wall_fb_author')).json()['user_id']
+    stranger_id = (await _register_user(service_client, 'wall_fb_other')).json()['user_id']
+
+    create_resp = await service_client.post(
+        f'/api/wall/{owner_id}/post',
+        json={'author_id': author_id, 'content': 'keep me'},
+    )
+    post_id = create_resp.json()['post_id']
+
+    delete_resp = await service_client.delete(
+        f'/api/wall/post/{post_id}?user_id={stranger_id}',
+    )
+    assert delete_resp.status_code == 403
