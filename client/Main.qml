@@ -425,7 +425,7 @@ Window {
     }
 
     Timer {
-        interval: 2500
+        interval: 5000
         running: appState.isLoggedIn
         repeat: true
         onTriggered: {
@@ -579,7 +579,7 @@ Window {
                     Text {
                         text: "Создать групповой чат"
                         font.bold: true
-                        color: "#111827"
+                        color: Theme.textPrimary
                         Layout.fillWidth: true
                     }
 
@@ -588,10 +588,12 @@ Window {
                         placeholderText: "Название чата"
                         Layout.fillWidth: true
                         padding: 10
+                        color: Theme.textPrimary
+                        placeholderTextColor: Theme.textFaint
                         background: Rectangle {
                             radius: 12
-                            color: "#f9fafb"
-                            border.color: "#e5e7eb"
+                            color: Theme.inputBg
+                            border.color: Theme.border
                         }
                     }
 
@@ -600,10 +602,12 @@ Window {
                         placeholderText: "Поиск пользователей по имени"
                         Layout.fillWidth: true
                         padding: 10
+                        color: Theme.textPrimary
+                        placeholderTextColor: Theme.textFaint
                         background: Rectangle {
                             radius: 12
-                            color: "#f9fafb"
-                            border.color: "#e5e7eb"
+                            color: Theme.inputBg
+                            border.color: Theme.border
                         }
                         onTextChanged: createChatDialog.runDialogSearch(text)
                     }
@@ -624,8 +628,8 @@ Window {
                             width: ListView.view.width
                             height: 36
                             radius: 8
-                            color: isSelected ? "#dbeafe" : (rowMouseArea.containsMouse ? "#f3f4f6" : "#f9fafb")
-                            border.color: isSelected ? "#93c5fd" : "#e5e7eb"
+                            color: isSelected ? Theme.bubbleOut : (rowMouseArea.containsMouse ? Theme.hoverSubtle : Theme.inputBg)
+                            border.color: isSelected ? Theme.bubbleOutBorder : Theme.border
 
                             RowLayout {
                                 anchors.fill: parent
@@ -635,7 +639,7 @@ Window {
 
                                 Text {
                                     text: parent.parent.isSelected ? "✓" : "+"
-                                    color: parent.parent.isSelected ? "#1d4ed8" : "#9ca3af"
+                                    color: parent.parent.isSelected ? Theme.accent : Theme.textFaint
                                     font.pixelSize: 14
                                     font.bold: true
                                     Layout.preferredWidth: 14
@@ -643,7 +647,7 @@ Window {
 
                                 Text {
                                     text: modelData.name + " (#" + modelData.user_id + ")"
-                                    color: "#111827"
+                                    color: Theme.textPrimary
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -663,7 +667,7 @@ Window {
                         visible: participantSearchField.text.length >= 2
                                  && (!createChatDialog.dialogSearchResults || createChatDialog.dialogSearchResults.length === 0)
                         text: "Никого не найдено"
-                        color: "#6b7280"
+                        color: Theme.textMuted
                         font.pixelSize: 12
                         Layout.fillWidth: true
                     }
@@ -679,8 +683,8 @@ Window {
                             Rectangle {
                                 required property var modelData
                                 radius: 14
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
                                 implicitWidth: chipRow.implicitWidth + 16
                                 implicitHeight: 28
 
@@ -691,13 +695,13 @@ Window {
 
                                     Text {
                                         text: parent.parent.modelData.name
-                                        color: "#1f2937"
+                                        color: Theme.bubbleOutText
                                         font.pixelSize: 12
                                     }
 
                                     Text {
                                         text: "✕"
-                                        color: "#1d4ed8"
+                                        color: Theme.accent
                                         font.pixelSize: 12
                                         font.bold: true
                                     }
@@ -745,8 +749,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: createChatDialog.submitCreateChat()
                         }
@@ -835,7 +845,7 @@ Window {
                     Text {
                         text: "Переименовать чат"
                         font.bold: true
-                        color: "#111827"
+                        color: Theme.textPrimary
                         Layout.fillWidth: true
                     }
 
@@ -849,10 +859,12 @@ Window {
                         placeholderText: "Новое название"
                         Layout.fillWidth: true
                         padding: 10
+                        color: Theme.textPrimary
+                        placeholderTextColor: Theme.textFaint
                         background: Rectangle {
                             radius: 12
-                            color: "#f9fafb"
-                            border.color: "#e5e7eb"
+                            color: Theme.inputBg
+                            border.color: Theme.border
                         }
                     }
 
@@ -928,17 +940,17 @@ Window {
 
         Dialog {
             id: addUserDialog
-            title: ""
             modal: true
             focus: true
             clip: true
             x: (window.width - width) / 2
             y: (window.height - height) / 2
-            width: 360
-            implicitHeight: addUserLayout.implicitHeight + 24
-            height: implicitHeight
+            width: 420
+            height: 480
             background: Rectangle {
-                color: "transparent"
+                radius: 12
+                color: Theme.bgSecondary
+                border.color: Theme.border
             }
             header: Item {
                 implicitHeight: 0
@@ -946,19 +958,42 @@ Window {
             }
 
             property string errorText: ""
+            property var searchResults: []
 
-            function submitAddUser() {
+            function isAlreadyParticipant(userId) {
+                for (var i = 0; i < participantsModel.length; i++) {
+                    if (participantsModel[i].user_id === userId) return true
+                }
+                return false
+            }
+
+            function refreshSearch(query) {
                 addUserDialog.errorText = ""
-                const userId = Number.parseInt(addUserField.text, 10)
-                if (!userId || userId <= 0) {
-                    addUserDialog.errorText = "Введите корректный user_id"
+                const q = (query || "").trim()
+                if (q.length < 2) {
+                    addUserDialog.searchResults = []
                     return
                 }
+                WebApi.ApiClient.searchUsers(q, function(status, response) {
+                    if (status === 200) {
+                        const users = response.users || []
+                        addUserDialog.searchResults = users.filter(function(u) {
+                            return u.user_id !== appState.currentUserId
+                                   && !addUserDialog.isAlreadyParticipant(u.user_id)
+                        })
+                    } else {
+                        addUserDialog.errorText = response.error || "Не удалось выполнить поиск"
+                    }
+                })
+            }
 
+            function addUser(userId) {
+                addUserDialog.errorText = ""
                 WebApi.ApiClient.addUserToChat(appState.currentChatId, appState.currentUserId, userId, function(status, response) {
                     if (status === 200) {
                         addUserDialog.close()
-                        addUserField.text = ""
+                        addUserSearchField.text = ""
+                        addUserDialog.searchResults = []
                         loadChatInfo()
                         setStatus("Участник добавлен")
                     } else {
@@ -967,102 +1002,142 @@ Window {
                 })
             }
 
-            contentItem: Rectangle {
+            onOpened: {
+                addUserSearchField.text = ""
+                addUserDialog.searchResults = []
+                addUserDialog.errorText = ""
+                addUserSearchField.forceActiveFocus()
+            }
+
+            ColumnLayout {
                 anchors.fill: parent
-                radius: 12
-                color: Theme.bgSecondary
-                border.color: Theme.border
-                clip: true
+                anchors.margins: 16
+                spacing: 10
 
-                ColumnLayout {
-                    id: addUserLayout
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 8
+                Text {
+                    text: "Добавить участника"
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: Theme.textPrimary
+                    Layout.fillWidth: true
+                }
 
-                    Text {
-                        text: "Добавить участника"
-                        font.bold: true
-                        color: "#111827"
-                        Layout.fillWidth: true
+                TextField {
+                    id: addUserSearchField
+                    placeholderText: "Поиск пользователей"
+                    Layout.fillWidth: true
+                    padding: 10
+                    color: Theme.textPrimary
+                    placeholderTextColor: Theme.textFaint
+                    background: Rectangle {
+                        radius: 12
+                        color: Theme.inputBg
+                        border.color: Theme.border
                     }
+                    onTextChanged: addUserDialog.refreshSearch(text)
+                }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: addUserDialog.searchResults
+                    spacing: 6
 
-                    TextField {
-                        id: addUserField
-                        placeholderText: "user_id участника"
-                        Layout.fillWidth: true
-                        padding: 10
-                        background: Rectangle {
-                            radius: 12
-                            color: "#f9fafb"
-                            border.color: "#e5e7eb"
-                        }
-                    }
+                    delegate: Rectangle {
+                        required property var modelData
 
-                    Text {
-                        text: addUserDialog.errorText
-                        color: Theme.error
-                        wrapMode: Text.Wrap
-                        Layout.fillWidth: true
-                    }
+                        width: parent.width
+                        height: 44
+                        radius: 8
+                        color: addUserMouseArea.containsMouse ? Theme.hover : Theme.inputBg
+                        border.color: Theme.border
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignRight
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 8
 
-                        Button {
-                            text: "Добавить"
-                            padding: 10
-                            background: Rectangle {
-                                radius: 12
-                                color: Theme.bubbleOut
-                                border.color: Theme.bubbleOutBorder
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Text {
+                                    text: modelData.name || "Без имени"
+                                    color: Theme.textPrimary
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: "#" + modelData.user_id
+                                    color: Theme.textMuted
+                                    font.pixelSize: 11
+                                }
                             }
-                            contentItem: Text {
-                                text: parent.text
-                                color: Theme.bubbleOutText
+
+                            Text {
+                                text: "Добавить"
+                                color: Theme.accent
                                 font.bold: true
-                                horizontalAlignment: Text.AlignHCenter
                             }
-                            onClicked: addUserDialog.submitAddUser()
                         }
 
-                        Button {
-                            text: "Отмена"
-                            padding: 10
-                            background: Rectangle {
-                                radius: 12
-                                color: Theme.hoverSubtle
-                                border.color: Theme.border
-                            }
-                            contentItem: Text {
-                                text: parent.text
-                                color: Theme.textMuted
-                                horizontalAlignment: Text.AlignHCenter
-                            }
-                            onClicked: addUserDialog.close()
+                        MouseArea {
+                            id: addUserMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: addUserDialog.addUser(modelData.user_id)
                         }
                     }
                 }
-            }
 
-            Shortcut {
-                sequence: "Return"
-                context: Qt.WindowShortcut
-                enabled: addUserDialog.visible
-                onActivated: addUserDialog.submitAddUser()
-            }
+                Text {
+                    visible: addUserSearchField.text.trim().length >= 2
+                             && addUserDialog.searchResults.length === 0
+                             && addUserDialog.errorText === ""
+                    text: "Ничего не найдено"
+                    color: Theme.textFaint
+                    Layout.fillWidth: true
+                }
 
-            Shortcut {
-                sequence: "Enter"
-                context: Qt.WindowShortcut
-                enabled: addUserDialog.visible
-                onActivated: addUserDialog.submitAddUser()
+                Text {
+                    visible: addUserSearchField.text.trim().length < 2
+                    text: "Введите минимум 2 символа"
+                    color: Theme.textFaint
+                    Layout.fillWidth: true
+                }
+
+                Text {
+                    text: addUserDialog.errorText
+                    color: Theme.error
+                    wrapMode: Text.Wrap
+                    Layout.fillWidth: true
+                    visible: addUserDialog.errorText !== ""
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+
+                    Button {
+                        text: "Закрыть"
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: Theme.hoverSubtle
+                            border.color: Theme.border
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: Theme.textPrimary
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        onClicked: addUserDialog.close()
+                    }
+                }
             }
 
             Shortcut {
@@ -1076,17 +1151,17 @@ Window {
 
         Dialog {
             id: removeUserDialog
-            title: ""
             modal: true
             focus: true
             clip: true
             x: (window.width - width) / 2
             y: (window.height - height) / 2
-            width: 360
-            implicitHeight: removeUserLayout.implicitHeight + 24
-            height: implicitHeight
+            width: 420
+            height: 460
             background: Rectangle {
-                color: "transparent"
+                radius: 12
+                color: Theme.bgSecondary
+                border.color: Theme.border
             }
             header: Item {
                 implicitHeight: 0
@@ -1095,18 +1170,19 @@ Window {
 
             property string errorText: ""
 
-            function submitRemoveUser() {
-                removeUserDialog.errorText = ""
-                const userId = Number.parseInt(removeUserField.text, 10)
-                if (!userId || userId <= 0) {
-                    removeUserDialog.errorText = "Введите корректный user_id"
-                    return
+            readonly property var removableParticipants: {
+                const list = []
+                for (var i = 0; i < participantsModel.length; i++) {
+                    const p = participantsModel[i]
+                    if (p && p.user_id !== appState.currentUserId) list.push(p)
                 }
+                return list
+            }
 
+            function removeUser(userId) {
+                removeUserDialog.errorText = ""
                 WebApi.ApiClient.removeUserFromChat(appState.currentChatId, appState.currentUserId, userId, function(status, response) {
                     if (status === 200) {
-                        removeUserDialog.close()
-                        removeUserField.text = ""
                         loadChatInfo()
                         setStatus("Участник удалён")
                     } else {
@@ -1115,96 +1191,124 @@ Window {
                 })
             }
 
-            contentItem: Rectangle {
+            onOpened: {
+                removeUserDialog.errorText = ""
+            }
+
+            ColumnLayout {
                 anchors.fill: parent
-                radius: 12
-                color: Theme.bgSecondary
-                border.color: Theme.border
-                clip: true
+                anchors.margins: 16
+                spacing: 10
 
-                ColumnLayout {
-                    id: removeUserLayout
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 8
+                Text {
+                    text: "Удалить участника"
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: Theme.textPrimary
+                    Layout.fillWidth: true
+                }
 
-                    Text {
-                        text: "Удалить участника"
-                        font.bold: true
-                        color: "#111827"
-                        Layout.fillWidth: true
-                    }
+                Text {
+                    text: "Выберите участника, которого хотите удалить"
+                    color: Theme.textMuted
+                    Layout.fillWidth: true
+                }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: removeUserDialog.removableParticipants
+                    spacing: 6
 
-                    TextField {
-                        id: removeUserField
-                        placeholderText: "user_id участника"
-                        Layout.fillWidth: true
-                        padding: 10
-                        background: Rectangle {
-                            radius: 12
-                            color: "#f9fafb"
-                            border.color: "#e5e7eb"
-                        }
-                    }
+                    delegate: Rectangle {
+                        required property var modelData
 
-                    Text {
-                        text: removeUserDialog.errorText
-                        color: Theme.error
-                        wrapMode: Text.Wrap
-                        Layout.fillWidth: true
-                    }
+                        width: parent.width
+                        height: 44
+                        radius: 8
+                        color: Theme.inputBg
+                        border.color: Theme.border
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignRight
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 8
 
-                        Button {
-                            text: "Удалить"
-                            padding: 10
-                            background: Rectangle {
-                                radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Text {
+                                    text: modelData.name || "Без имени"
+                                    color: Theme.textPrimary
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: "#" + modelData.user_id
+                                    color: Theme.textMuted
+                                    font.pixelSize: 11
+                                }
                             }
-                            onClicked: removeUserDialog.submitRemoveUser()
-                        }
 
-                        Button {
-                            text: "Отмена"
-                            padding: 10
-                            background: Rectangle {
-                                radius: 12
-                                color: Theme.hoverSubtle
-                                border.color: Theme.border
+                            Button {
+                                text: "Удалить"
+                                padding: 6
+                                background: Rectangle {
+                                    radius: 8
+                                    color: parent.hovered ? Theme.error : "transparent"
+                                    border.color: Theme.error
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.hovered ? "#ffffff" : Theme.error
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: removeUserDialog.removeUser(modelData.user_id)
                             }
-                            contentItem: Text {
-                                text: parent.text
-                                color: Theme.textMuted
-                                horizontalAlignment: Text.AlignHCenter
-                            }
-                            onClicked: removeUserDialog.close()
                         }
                     }
                 }
-            }
 
-            Shortcut {
-                sequence: "Return"
-                context: Qt.WindowShortcut
-                enabled: removeUserDialog.visible
-                onActivated: removeUserDialog.submitRemoveUser()
-            }
+                Text {
+                    visible: removeUserDialog.removableParticipants.length === 0
+                    text: "Нет других участников"
+                    color: Theme.textFaint
+                    Layout.fillWidth: true
+                }
 
-            Shortcut {
-                sequence: "Enter"
-                context: Qt.WindowShortcut
-                enabled: removeUserDialog.visible
-                onActivated: removeUserDialog.submitRemoveUser()
+                Text {
+                    text: removeUserDialog.errorText
+                    color: Theme.error
+                    wrapMode: Text.Wrap
+                    Layout.fillWidth: true
+                    visible: removeUserDialog.errorText !== ""
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+
+                    Button {
+                        text: "Закрыть"
+                        padding: 10
+                        background: Rectangle {
+                            radius: 12
+                            color: Theme.hoverSubtle
+                            border.color: Theme.border
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: Theme.textPrimary
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        onClicked: removeUserDialog.close()
+                    }
+                }
             }
 
             Shortcut {
@@ -1218,7 +1322,6 @@ Window {
 
         Dialog {
             id: participantsDialog
-            title: "Участники чата"
             modal: true
             focus: true
             clip: true
@@ -1231,6 +1334,10 @@ Window {
                 color: Theme.bgSecondary
                 border.color: Theme.border
             }
+            header: Item {
+                implicitHeight: 0
+                visible: false
+            }
 
             ColumnLayout {
                 anchors.fill: parent
@@ -1238,9 +1345,16 @@ Window {
                 spacing: 10
 
                 Text {
-                    text: appState.currentChatName
+                    text: "Участники чата"
+                    font.pixelSize: 16
                     font.bold: true
                     color: Theme.textPrimary
+                    Layout.fillWidth: true
+                }
+
+                Text {
+                    text: appState.currentChatName
+                    color: Theme.textMuted
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -1300,13 +1414,13 @@ Window {
                                 bottomPadding: 6
                                 contentItem: Text {
                                     text: removeFromChatItem.text
-                                    color: "#111827"
+                                    color: Theme.textPrimary
                                     verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
                                 }
                                 background: Rectangle {
                                     radius: 12
-                                    color: removeFromChatItem.hovered ? "#e5e7eb" : "transparent"
+                                    color: removeFromChatItem.hovered ? Theme.hover : "transparent"
                                 }
                                 onTriggered: {
                                     if (appState.currentChatType.toLowerCase() !== "group") {
@@ -1350,7 +1464,7 @@ Window {
                 Text {
                     visible: !participantsModel || participantsModel.length === 0
                     text: "Участники не найдены"
-                    color: "#6b7280"
+                    color: Theme.textMuted
                     Layout.fillWidth: true
                 }
 
@@ -1422,13 +1536,14 @@ Window {
                     Text {
                         text: "Выйти из чата"
                         font.bold: true
-                        color: "#111827"
+                        color: Theme.textPrimary
                         Layout.fillWidth: true
                     }
 
                     Text {
                         text: "Вы уверены, что хотите выйти из чата?"
                         wrapMode: Text.Wrap
+                        color: Theme.textBody
                         Layout.fillWidth: true
                     }
 
@@ -1512,14 +1627,14 @@ Window {
             modal: false
             background: Rectangle {
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
             }
 
             Rectangle {
                 anchors.fill: parent
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
 
                 ListView {
                     anchors.fill: parent
@@ -1527,8 +1642,8 @@ Window {
                     delegate: Rectangle {
                         width: parent.width
                         height: 56
-                        color: "#f9fafb"
-                        border.color: "#e5e7eb"
+                        color: Theme.inputBg
+                        border.color: Theme.border
 
                         RowLayout {
                             anchors.fill: parent
@@ -1536,6 +1651,7 @@ Window {
 
                             Text {
                                 text: chatTitle(modelData.chat_id) + ": " + (modelData.content || "")
+                                color: Theme.textPrimary
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }

@@ -225,7 +225,7 @@ Rectangle {
             bottomPadding: 6
             contentItem: Text {
                 text: parent.text
-                color: "#111827"
+                color: Theme.textPrimary
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
@@ -235,7 +235,7 @@ Rectangle {
                 }
             }
             background: Rectangle {
-                color: parent.hovered ? "#f3f4f6" : "transparent"
+                color: parent.hovered ? Theme.hoverSubtle : "transparent"
                 radius: 8
             }
         }
@@ -263,7 +263,7 @@ Rectangle {
             bottomPadding: 6
             contentItem: Text {
                 text: parent.text
-                color: "#111827"
+                color: Theme.textPrimary
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
@@ -273,7 +273,7 @@ Rectangle {
                 }
             }
             background: Rectangle {
-                color: parent.hovered ? "#f3f4f6" : "transparent"
+                color: parent.hovered ? Theme.hoverSubtle : "transparent"
                 radius: 8
             }
         }

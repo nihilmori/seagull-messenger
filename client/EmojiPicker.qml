@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Popup {
     id: root
@@ -16,8 +17,8 @@ Popup {
 
     background: Rectangle {
         radius: 12
-        color: "#ffffff"
-        border.color: "#e5e7eb"
+        color: Theme.bgSecondary
+        border.color: Theme.border
     }
 
     readonly property var categories: [
@@ -94,7 +95,7 @@ Popup {
             Layout.preferredHeight: 36
 
             background: Rectangle {
-                color: "#f9fafb"
+                color: Theme.bgMuted
                 radius: 12
             }
 
@@ -108,7 +109,7 @@ Popup {
                     padding: 4
 
                     background: Rectangle {
-                        color: tabBtn.checked ? "#dbeafe" : (tabBtn.hovered ? "#e5e7eb" : "transparent")
+                        color: tabBtn.checked ? Theme.bubbleOut : (tabBtn.hovered ? Theme.hover : "transparent")
                         radius: 8
                     }
 
@@ -126,7 +127,7 @@ Popup {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#ffffff"
+            color: Theme.bgSecondary
 
             StackLayout {
                 anchors.fill: parent
@@ -149,7 +150,7 @@ Popup {
                             width: 36
                             height: 36
                             radius: 6
-                            color: cellMouseArea.containsMouse ? "#f3f4f6" : "transparent"
+                            color: cellMouseArea.containsMouse ? Theme.hoverSubtle : "transparent"
 
                             Text {
                                 anchors.centerIn: parent

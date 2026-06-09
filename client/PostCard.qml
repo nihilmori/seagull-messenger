@@ -159,7 +159,7 @@ Rectangle {
                     anchors.bottomMargin: 4
                     text: "Нажмите ещё раз"
                     font.pixelSize: 10
-                    color: "#ef4444"
+                    color: Theme.error
                     visible: pendingDelete
                 }
 
