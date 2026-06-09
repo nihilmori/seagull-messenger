@@ -1,114 +1,151 @@
 # Структура базы данных - Seagull Messenger
 
-![Схема базы данных](database_schema.png)
+Вся схема живёт в `seagull_schema`. Источник истины: [postgresql/schemas/db_1.sql](../postgresql/schemas/db_1.sql).
 
-## Users - Пользователи
+## ER-диаграмма
 
-### Model: User
+```mermaid
+erDiagram
+    USERS ||--o{ CHAT_USERS    : "состоит в"
+    USERS ||--o{ ACTIONS       : "отправил"
+    USERS ||--o{ TYPING_STATUS : "печатает в"
+    USERS ||--o{ WALL_POSTS    : "владеет стеной"
+    USERS ||--o{ WALL_POSTS    : "написал пост"
+    CHATS ||--o{ CHAT_USERS    : "содержит"
+    CHATS ||--o{ ACTIONS       : "содержит"
+    CHATS ||--o{ TYPING_STATUS : "видит активность"
+    MESSAGES ||--|| ACTIONS    : "адресовано"
+
+    USERS {
+        int      user_id PK
+        varchar  login UK "≤ 50"
+        text     password_hash
+        text     salt
+        varchar  name "≤ 100"
+        varchar  bio "≤ 80, default ''"
+    }
+    CHATS {
+        int     chat_id PK
+        varchar name "≤ 100"
+        int     type "0 group, 1 private"
+    }
+    CHAT_USERS {
+        int         chat_id PK,FK
+        int         user_id PK,FK
+        timestamptz joined_at "default now()"
+        int         last_read_message_id "nullable"
+    }
+    MESSAGES {
+        int         message_id PK
+        text        content
+        boolean     is_read "default false"
+        timestamptz sent_at "default now()"
+    }
+    ACTIONS {
+        int action_id PK
+        int sender_id FK
+        int message_id FK
+        int chat_id FK
+    }
+    TYPING_STATUS {
+        int         chat_id PK,FK
+        int         user_id PK,FK
+        boolean     is_typing "default false"
+        timestamptz updated_at "default now()"
+    }
+    WALL_POSTS {
+        int         post_id PK
+        int         user_id FK "владелец стены"
+        int         author_id FK "автор поста"
+        text        content
+        timestamptz created_at "default now()"
+        timestamptz updated_at "default now()"
+        boolean     is_deleted "default false"
+    }
+```
+
+## Таблицы
+
+### `seagull_schema.users`
+
 | Поле | Тип | Описание |
 |---|---|---|
-| `user_id` | `int` (PK) | Уникальный ID пользователя (auto-increment) |
-| `login` | `varchar(50)` (UNIQUE) | Уникальный логин |
-| `password_hash` | `text` | Хеш пароля (SHA256) |
-| `salt` | `text` | Соль для хеширования пароля |
-| `name` | `varchar(100)` | Отображаемое имя пользователя |
-| `bio` | `varchar(80)` | Описание профиля (по умолчанию пусто) |
+| `user_id` | `serial` PK | уникальный ID пользователя |
+| `login` | `varchar(50)` UNIQUE NOT NULL | логин для входа |
+| `password_hash` | `text` NOT NULL | SHA-256 от `password + salt` |
+| `salt` | `text` NOT NULL | соль для хеша |
+| `name` | `varchar(100)` NOT NULL | отображаемое имя |
+| `bio` | `varchar(80)` DEFAULT `''` | описание профиля |
 
-**Схема:** `seagull_schema.users`
+Используется в: `register`, `login`, `get_user_profile`, `update_user`, `search_users`.
 
-**Методы API:**
+### `seagull_schema.chats`
 
-| Метод | Описание | Возвращает |
-|---|---|---|
-| `POST /api/register` | Регистрация нового пользователя | `{user_id, login, name}` |
-| `POST /api/login` | Вход в систему | `{user_id, login, name}` |
-| `GET /api/user/profile?user_id={id}` | Получить профиль пользователя | `{user_id, login, name, bio}` |
-| `PATCH /api/user/profile` | Обновить профиль или пароль | `{user_id, login, name, bio}` |
-| `GET /api/users/search?query={q}` | Поиск пользователей по имени | `{query, count, users[]}` |
-
-**Примечания:**
-- Пароль должен быть от 8 до 32 символов, содержать минимум 1 заглавную букву, 1 строчную букву, 1 цифру и не содержать пробелов
-- При обновлении профиля можно изменить: `name`, `bio`, `login`, `new_password`
-- При смене пароля требуется `current_password`
-
----
-
-## Chats - Чаты
-
-### Model: Chat
 | Поле | Тип | Описание |
 |---|---|---|
-| `chat_id` | `int` (PK) | Уникальный ID чата (auto-increment) |
-| `name` | `varchar(100)` | Название чата (для групп) или сгенерированное имя для приватов |
-| `type` | `int` | Тип чата: `0` = Group, `1` = Private |
+| `chat_id` | `serial` PK | уникальный ID чата |
+| `name` | `varchar(100)` NOT NULL | название (для групп) или техническое имя для приватных (`private_{u1}_{u2}`) |
+| `type` | `int` NOT NULL DEFAULT `0` | `0` — group, `1` — private |
 
-**Схема:** `seagull_schema.chats`
+В API наружу `type` отдаётся как `type_name = "group" \| "private"`.
 
-### Model: ChatUsers (Участники)
+### `seagull_schema.chat_users`
+
 | Поле | Тип | Описание |
 |---|---|---|
-| `chat_id` | `int` (FK, PK part) | ID чата |
-| `user_id` | `int` (FK, PK part) | ID пользователя |
-| `joined_at` | `timestamptz` | Дата присоединения к чату |
+| `chat_id` | `int` FK→`chats.chat_id` ON DELETE CASCADE | составная PK |
+| `user_id` | `int` FK→`users.user_id` ON DELETE CASCADE | составная PK |
+| `joined_at` | `timestamptz` DEFAULT `now()` | дата присоединения |
+| `last_read_message_id` | `int` DEFAULT `NULL` | максимальный `message_id`, который пользователь прочёл в этом чате |
 
-**Схема:** `seagull_schema.chat_users`
+`last_read_message_id` обновляется в `get_messages` (как побочный эффект при чтении) и в `mark_messages_read`.
 
-**Методы API:**
+### `seagull_schema.messages`
 
-| Метод | Описание | Возвращает |
-|---|---|---|
-| `GET /api/chats?user_id={id}&limit={l}&offset={o}` | Список чатов пользователя | `{chats: [{chat_id, name, type_name, participants_count}]}` |
-| `POST /api/chats/group` | Создать групповой чат | `{chat_id, name, type_name, participants[]}` |
-| `POST /api/chat/{chat_id}/users/add` | Добавить пользователя в чат | `{chat_id, name, participants[]}` |
-| `POST /api/chat/{chat_id}/users/remove` | Удалить пользователя из чата | `{chat_id, name, participants[]}` |
-| `POST /api/chat/{chat_id}/leave` | Выход пользователя из чата | `{}` (успех) |
-| `GET /api/chat/{chat_id}?user_id={id}` | Получить информацию о чате | `{chat_id, name, type_name, participants[], participants_count}` |
-| `PATCH /api/chat/{chat_id}` | Переименовать групповой чат | `{chat_id, name, participants[]}` |
-
-**Примечания:**
-- Приватные чаты имеют название формата: `private_{user1_id}_{user2_id}`
-- Приватный чат создаётся автоматически при первом сообщении между двумя пользователями (если его ещё нет)
-- Добавить человека в приватный чат невозможно
-- Выйти из группового чата может любой участник
-- `type_name` возвращается как `"group"` или `"private"`
-
----
-
-## Messages - Сообщения
-
-### Model: Message
 | Поле | Тип | Описание |
 |---|---|---|
-| `message_id` | `int` (PK) | Уникальный ID сообщения (auto-increment) |
-| `content` | `text` | Текст сообщения |
-| `is_read` | `boolean` | Флаг прочитанного сообщения (по умолчанию `false`) |
-| `sent_at` | `timestamptz` | Время отправки (по умолчанию текущее время в UTC) |
+| `message_id` | `serial` PK | уникальный ID сообщения |
+| `content` | `text` NOT NULL | текст |
+| `is_read` | `boolean` DEFAULT `false` | флаг прочитанности (поднимается в `mark_messages_read`) |
+| `sent_at` | `timestamptz` DEFAULT `now()` | время отправки в UTC |
 
-**Схема:** `seagull_schema.messages`
+Связь с чатом и отправителем хранится в отдельной таблице `actions` (one-to-one). В API `sent_at` форматируется как `to_char(... AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS')`.
 
-### Model: Action (История отправителя и чата)
+### `seagull_schema.actions`
+
 | Поле | Тип | Описание |
 |---|---|---|
-| `action_id` | `int` (PK) | Уникальный ID действия |
-| `sender_id` | `int` (FK) | ID отправителя (ссылка на `users`) |
-| `message_id` | `int` (FK) | ID сообщения (ссылка на `messages`) |
-| `chat_id` | `int` (FK) | ID чата (ссылка на `chats`) |
+| `action_id` | `serial` PK | уникальный ID записи |
+| `sender_id` | `int` FK→`users.user_id` ON DELETE CASCADE | автор сообщения |
+| `message_id` | `int` FK→`messages.message_id` ON DELETE CASCADE | ссылка на сообщение |
+| `chat_id` | `int` FK→`chats.chat_id` ON DELETE CASCADE | чат, куда отправлено |
 
-**Схема:** `seagull_schema.actions`
+Фактически это «таблица связей» между сообщением и чатом/автором (исторически выделено отдельно). Каждой записи `messages` соответствует ровно одна запись `actions`.
 
-**Методы API:**
+### `seagull_schema.typing_status`
 
-| Метод | Описание | Возвращает |
+| Поле | Тип | Описание |
 |---|---|---|
-| `POST /api/messages/send` | Отправить сообщение | `{message_id, sender_id, chat_id, content, sent_at, receiver_id(?), is_new_chat(?)}` |
-| `GET /api/messages?chat_id={id}&user_id={id}&limit={l}&offset={o}` | Получить сообщения чата | `{messages: [{message_id, content, sender_id, chat_id, sent_at}]}` |
-| `PATCH /api/messages/{message_id}` | Редактировать сообщение | `{message_id, content, sender_id, chat_id, sent_at}` |
+| `chat_id` | `int` FK→`chats.chat_id` ON DELETE CASCADE | составная PK |
+| `user_id` | `int` FK→`users.user_id` ON DELETE CASCADE | составная PK |
+| `is_typing` | `boolean` DEFAULT `false` | статус «печатает» |
+| `updated_at` | `timestamptz` DEFAULT `now()` | время последнего апдейта |
 
-**Примечания:**
-- При отправке сообщения в приватный чат указывается `chat_id = 0` и `receiver_id`
-- Время возвращается в формате `DD.MM.YYYY HH24:MI:SS` в часовом поясе `Europe/Moscow`
+Эндпоинт `POST /api/chat/{chat_id}/typing` пишет сюда c `ON CONFLICT … DO UPDATE`. `GET /api/chat/{chat_id}/typing` показывает только записи, где `is_typing = TRUE AND updated_at > NOW() - INTERVAL '5 seconds'`.
 
----
+### `seagull_schema.wall_posts`
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `post_id` | `serial` PK | уникальный ID поста |
+| `user_id` | `int` NOT NULL FK→`users.user_id` ON DELETE CASCADE | владелец стены |
+| `author_id` | `int` NOT NULL FK→`users.user_id` ON DELETE CASCADE | автор поста (может совпадать с владельцем) |
+| `content` | `text` NOT NULL | текст поста (до 1000 символов на стороне API) |
+| `created_at` | `timestamptz` DEFAULT `now()` | время создания |
+| `updated_at` | `timestamptz` DEFAULT `now()` | время последнего изменения |
+| `is_deleted` | `boolean` DEFAULT `false` | soft-delete |
+
+`DELETE /api/wall/post/{post_id}` ставит `is_deleted = true` (физически запись не удаляется). При выборке постов фильтр `is_deleted = false`.
 
 ## SQL Schema Definition
 
@@ -118,45 +155,67 @@ DROP SCHEMA IF EXISTS seagull_schema CASCADE;
 CREATE SCHEMA IF NOT EXISTS seagull_schema;
 
 CREATE TABLE IF NOT EXISTS seagull_schema.users (
-    user_id SERIAL PRIMARY KEY,
-    login VARCHAR(50) UNIQUE NOT NULL,
+    user_id       SERIAL PRIMARY KEY,
+    login         VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    salt TEXT NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    bio VARCHAR(80) DEFAULT ''
+    salt          TEXT NOT NULL,
+    name          VARCHAR(100) NOT NULL,
+    bio           VARCHAR(80) DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.messages (
     message_id SERIAL PRIMARY KEY,
-    content TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    content    TEXT NOT NULL,
+    is_read    BOOLEAN DEFAULT FALSE,
+    sent_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.chats (
     chat_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    type INT NOT NULL DEFAULT 0
+    name    VARCHAR(100) NOT NULL,
+    type    INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.chat_users (
-    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
-    user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
-    joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    chat_id              INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
+    user_id              INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    joined_at            TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_read_message_id INT DEFAULT NULL,
+    PRIMARY KEY (chat_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.typing_status (
+    chat_id    INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
+    user_id    INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    is_typing  BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (chat_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS seagull_schema.actions (
-    action_id SERIAL PRIMARY KEY,
-    sender_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    action_id  SERIAL PRIMARY KEY,
+    sender_id  INT REFERENCES seagull_schema.users(user_id)       ON DELETE CASCADE,
     message_id INT REFERENCES seagull_schema.messages(message_id) ON DELETE CASCADE,
-    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE
+    chat_id    INT REFERENCES seagull_schema.chats(chat_id)       ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.wall_posts (
+    post_id    SERIAL PRIMARY KEY,
+    user_id    INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    author_id  INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    content    TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE
 );
 ```
 
----
+## Особенности и инварианты
 
-### Особенности
-- **Приватные чаты**: Создаются автоматически при первом сообщении между двумя пользователями
-- **Групповые чаты**: Создаются явно и могут содержать несколько участников
-- **Каскадное удаление**: При удалении пользователя удаляются все его сообщения и записи о участии в чатах
+- **Приватные чаты** создаются автоматически при первом сообщении (`POST /api/messages/send` с `chat_id = 0` и `receiver_id`). `chats.name` для них имеет формат `private_{u1}_{u2}`, но наружу всегда отдаётся `display_name` — имя собеседника.
+- **Групповые чаты** создаются явно через `POST /api/chats/group`. Создатель автоматически попадает в `chat_users`.
+- **Связка сообщение↔чат↔автор** живёт в `actions` (исторически отдельная таблица). Запросы вроде «сообщения чата» делают `JOIN actions ON message_id`.
+- **Прочитанность** хранится двойственно: глобальный `messages.is_read` (true, когда кто-то прочитал не своё сообщение) и точный курсор `chat_users.last_read_message_id` на каждого участника. Сводка непрочитанных считается через `last_read_message_id`.
+- **`typing_status`** — short-lived TTL (5 секунд) по `updated_at`. Старые записи не удаляются, просто перестают учитываться при выдаче.
+- **`wall_posts`** — soft-delete: при удалении ставится `is_deleted = true`, физически запись остаётся.
+- **Каскадное удаление**: при удалении пользователя удаляются все его участия в чатах, действия (а с ними и связанные сообщения через FK… фактически нет: `messages` не имеет FK на `users`, удалится только `actions`), статус печати и посты на/от него.
