@@ -34,12 +34,21 @@ add_library(
     src/get_chats_handler.cpp
     src/get_user_profile_handler.cpp
     src/create_group_chat_handler.cpp
+    src/delete_message_handler.cpp
     src/remove_user_from_chat_handler.cpp
+    src/search_messages_handler.cpp
     src/search_users_handler.cpp
     src/get_chat_info_handler.cpp
     src/update_chat_handler.cpp
     src/update_user_handler.cpp
     src/edit_message_handler.cpp
+    src/get_unread_messages_handler.cpp
+    src/mark_messages_read_handler.cpp
+    src/typing_handler.cpp
+    src/get_typing_handler.cpp
+    src/wallpost_create_handler.cpp
+    src/wallposts_get_handler.cpp
+    src/wallpost_delete_handler.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}_objs

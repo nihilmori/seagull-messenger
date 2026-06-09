@@ -1,4 +1,4 @@
-#include "update_user_handler.hpp"
+#include <update_user_handler.hpp>
 
 #include <utils_handler.hpp>
 
@@ -62,6 +62,12 @@ std::string UpdateUserHandler::HandleRequestThrow(
   if (has_name && utils_handler::IsBlank(name)) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("Field 'name' must not be empty");
+  }
+
+  if (has_name && name.length() < 2) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "Field 'name' must be at least 2 characters");
   }
 
   if (has_login && utils_handler::IsBlank(new_login)) {

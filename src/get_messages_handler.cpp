@@ -92,6 +92,22 @@ std::string GetMessagesHandler::HandleRequestThrow(
       "LIMIT $2 OFFSET $3",
       chat_id, limit, offset);
 
+  const auto max_result =
+      pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kSlave,
+                           "SELECT COALESCE(MAX(message_id), 0) AS max_id "
+                           "FROM seagull_schema.actions WHERE chat_id = $1",
+                           chat_id);
+  const int max_message_id = max_result.AsSingleRow<int>();
+
+  if (max_message_id > 0) {
+    pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "UPDATE seagull_schema.chat_users "
+      "SET last_read_message_id = GREATEST(COALESCE(last_read_message_id, 0), $1) "
+        "WHERE chat_id = $2 AND user_id = $3",
+        max_message_id, chat_id, user_id);
+  }
+
   userver::formats::json::ValueBuilder messages(
       userver::formats::common::Type::kArray);
   for (const auto& row : result) {

@@ -28,6 +28,15 @@ CREATE TABLE IF NOT EXISTS seagull_schema.chat_users (
     chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
     user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
     joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_read_message_id INT DEFAULT NULL,
+    PRIMARY KEY (chat_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.typing_status (
+    chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE,
+    user_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    is_typing BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (chat_id, user_id)
 );
 
@@ -36,4 +45,14 @@ CREATE TABLE IF NOT EXISTS seagull_schema.actions (
     sender_id INT REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
     message_id INT REFERENCES seagull_schema.messages(message_id) ON DELETE CASCADE,
     chat_id INT REFERENCES seagull_schema.chats(chat_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS seagull_schema.wall_posts (
+    post_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    author_id INT NOT NULL REFERENCES seagull_schema.users(user_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE
 );
