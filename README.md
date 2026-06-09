@@ -30,6 +30,7 @@ curl -i http://127.0.0.1:8080/ping
 - [Как собирать и запускать](docs/run.md)
 - [Подробное API](docs/api.md)
 - [Структура БД](docs/database.md)
+- [Десктоп-клиент](docs/client.md)
 
 ## Стек
 
