@@ -77,7 +77,6 @@ ScrollView {
     }
 
     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
     contentWidth: availableWidth
     clip: true
 
@@ -191,30 +190,78 @@ ScrollView {
         id: editProfileDialog
         title: "Редактировать профиль"
         modal: true
-        width: 400
-        x: (window.width - width) / 2
-        y: (window.height - height) / 2
-
+        width: 420
+        height: 280
+        x: (window.width - width) / 2 - width/2
+        y: (window.height - height) / 2 - height/2
+        parent: window.overlay
         property string errorText: ""
 
+        function saveProfile() {
+            editProfileDialog.errorText = ""
+            const updates = {}
+            if (editNameField.text !== root.userInfo.name) updates.name = editNameField.text
+            if (editBioField.text !== (root.userInfo.bio || "")) updates.bio = editBioField.text
+
+            if (Object.keys(updates).length === 0) {
+                editProfileDialog.close()
+                return
+            }
+
+            WebApi.ApiClient.updateUserProfile(
+                typeof appState !== "undefined" ? appState.currentUserId : -1,
+                updates,
+                function(status, response) {
+                    if (status === 200) {
+                        editProfileDialog.close()
+                        root.userInfo = response
+                        if (typeof setStatus === "function") setStatus("Профиль обновлён")
+                    } else {
+                        editProfileDialog.errorText = response.error || "Ошибка обновления"
+                    }
+                }
+            )
+        }
+
+        background: Rectangle {
+            radius: 16
+            color: "#ffffff"
+            border.color: "#e5e7eb"
+        }
+
+        header: Rectangle {
+            height: 48
+            width: parent.width
+            color: "transparent"
+
+            Text {
+                anchors.centerIn: parent
+                text: "Редактировать профиль"
+                font.pixelSize: 18
+                font.bold: true
+                color: "#111827"
+            }
+        }
+
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 16
-            spacing: 12
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 20
+            spacing: 16
 
             TextField {
                 id: editNameField
                 placeholderText: "Имя"
                 text: root.userInfo.name || ""
                 Layout.fillWidth: true
-                padding: 10
-                color: Theme.textPrimary
-                placeholderTextColor: Theme.textFaint
+                padding: 12
                 background: Rectangle {
                     radius: 10
                     color: Theme.inputBg
                     border.color: Theme.border
                 }
+                Keys.onReturnPressed: editProfileDialog.saveProfile()
             }
 
             TextArea {
@@ -224,66 +271,85 @@ ScrollView {
                 Layout.fillWidth: true
                 Layout.minimumHeight: 80
                 wrapMode: Text.WordWrap
-                padding: 10
-                color: Theme.textPrimary
-                placeholderTextColor: Theme.textFaint
+                padding: 12
                 background: Rectangle {
                     radius: 10
                     color: Theme.inputBg
                     border.color: Theme.border
                 }
+                Keys.onPressed: function(event) {
+                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        if (event.modifiers & Qt.ShiftModifier) {
+                                event.accepted = false;
+                        } else {
+                            event.accepted = true;
+                            editProfileDialog.saveProfile();
+                        }
+                    }
+                }
             }
 
             Text {
                 text: editProfileDialog.errorText
-                color: Theme.error
+                color: "#dc2626"
+                font.pixelSize: 12
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
+                visible: editProfileDialog.errorText !== ""
             }
         }
 
-        footer: DialogButtonBox {
-            alignment: Qt.AlignRight
+        footer: Rectangle {
+            height: 60
+            width: parent.width
+            color: "transparent"
 
-            Button {
-                text: "Отмена"
-                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
-                onClicked: editProfileDialog.close()
-            }
-            Button {
-                text: "Сохранить"
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-                onClicked: {
-                    editProfileDialog.errorText = ""
-                    const updates = {}
-                    if (editNameField.text !== root.userInfo.name) updates.name = editNameField.text
-                    if (editBioField.text !== (root.userInfo.bio || "")) updates.bio = editBioField.text
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 12
 
-                    if (Object.keys(updates).length === 0) {
-                        editProfileDialog.close()
-                        return
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    text: "Отмена"
+                    onClicked: editProfileDialog.close()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#6b7280"
+                        horizontalAlignment: Text.AlignHCenter
                     }
+                    background: Rectangle {
+                        radius: 10
+                        color: parent.hovered ? "#f3f4f6" : "#ffffff"
+                        border.color: "#e5e7eb"
+                    }
+                }
 
-                    WebApi.ApiClient.updateUserProfile(
-                        typeof appState !== "undefined" ? appState.currentUserId : -1,
-                        updates,
-                        function(status, response) {
-                            if (status === 200) {
-                                editProfileDialog.close()
-                                root.userInfo = response
-                                if (typeof setStatus === "function") setStatus("Профиль обновлён")
-                            } else {
-                                editProfileDialog.errorText = response.error || "Ошибка обновления"
-                            }
-                        }
-                    )
+                Button {
+                    text: "Сохранить"
+                    onClicked: editProfileDialog.saveProfile()
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    background: Rectangle {
+                        radius: 10
+                        color: parent.hovered ? "#2563eb" : "#3b82f6"
+                    }
                 }
             }
         }
+        Shortcut {
+            sequence: "Escape"
+            enabled: editProfileDialog.opened
+            onActivated: editProfileDialog.close()
+        }
     }
 
-    onUserIdChanged: {
-        console.log("UserId changed to:", root.userId)
-        loadUserProfile()
+        onUserIdChanged: {
+            console.log("UserId changed to:", root.userId)
+            loadUserProfile()
+        }
     }
-}

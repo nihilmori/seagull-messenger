@@ -186,7 +186,7 @@ Rectangle {
         property int userId: -1
         property string userName: ""
 
-        implicitWidth: 200
+        implicitWidth: 225
         padding: 6
         background: Rectangle {
             radius: 12
@@ -196,18 +196,28 @@ Rectangle {
 
         MenuItem {
             text: "Открыть стену пользователя"
+            implicitHeight: 32
+            leftPadding: 12
+            rightPadding: 12
+            topPadding: 6
+            bottomPadding: 6
+            contentItem: Text {
+                text: parent.text
+                color: "#111827"
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+            background: Rectangle {
+                radius: 8
+                color: parent.hovered ? "#e5e7eb" : "transparent"
+            }
             onTriggered: {
                 if (searchContextMenu.userId > 0) {
                     window.openUserWall(searchContextMenu.userId)
                 }
             }
-            contentItem: Text {
-                text: parent.text
-                color: Theme.textPrimary
-                verticalAlignment: Text.AlignVCenter
-            }
             background: Rectangle {
-                color: parent.hovered ? Theme.hover : "transparent"
+                color: parent.hovered ? "#f3f4f6" : "transparent"
                 radius: 8
             }
         }
@@ -218,7 +228,7 @@ Rectangle {
         property int peerUserId: -1
         property string peerName: ""
 
-        implicitWidth: 200
+        implicitWidth: 220
         padding: 6
         background: Rectangle {
             radius: 12
@@ -228,18 +238,28 @@ Rectangle {
 
         MenuItem {
             text: "Открыть стену собеседника"
+            implicitHeight: 32
+            leftPadding: 12
+            rightPadding: 12
+            topPadding: 6
+            bottomPadding: 6
+            contentItem: Text {
+                text: parent.text
+                color: "#111827"
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+            background: Rectangle {
+                radius: 8
+                color: parent.hovered ? "#e5e7eb" : "transparent"
+            }
             onTriggered: {
                 if (chatContextMenu.peerUserId > 0) {
                     window.openUserWall(chatContextMenu.peerUserId)
                 }
             }
-            contentItem: Text {
-                text: parent.text
-                color: Theme.textPrimary
-                verticalAlignment: Text.AlignVCenter
-            }
             background: Rectangle {
-                color: parent.hovered ? Theme.hover : "transparent"
+                color: parent.hovered ? "#f3f4f6" : "transparent"
                 radius: 8
             }
         }

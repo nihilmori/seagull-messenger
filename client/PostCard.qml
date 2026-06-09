@@ -194,20 +194,20 @@ Rectangle {
         }
     }
 
+    function pad2(value) {
+        return value < 10 ? "0" + value : String(value)
+    }
+
     function formatDate(dateValue) {
         if (!dateValue) return ""
 
         var dateStr = String(dateValue)
 
-        var m = /^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2})(?::\d{2})?$/.exec(dateStr)
-        if (m) {
-            return m[4] + " " + m[1] + "." + m[2] + "." + m[3]
-        }
-
         if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
             var parts = dateStr.split(" ")
             var dateParts = parts[0].split("-")
             var timeParts = parts[1] ? parts[1].split(":") : []
+
             var formatted = dateParts[2] + "." + dateParts[1] + "." + dateParts[0]
             if (timeParts.length >= 2) {
                 formatted += " " + timeParts[0] + ":" + timeParts[1]
@@ -215,6 +215,11 @@ Rectangle {
             return formatted
         }
 
-        return dateStr
+        if (dateStr.includes("��")) {
+            var now = new Date()
+            return now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear()
+        }
+
+        return ""
     }
 }

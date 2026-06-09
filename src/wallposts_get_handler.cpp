@@ -63,9 +63,7 @@ std::string WallPostsGetHandler::HandleRequestThrow(
 
         auto posts_result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
-            "SELECT wp.post_id, wp.content, "
-            "       to_char(wp.created_at AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS') AS created_at, "
-            "       to_char(wp.updated_at AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY HH24:MI:SS') AS updated_at, "
+            "SELECT wp.post_id, wp.content, wp.created_at::text as created_at, wp.updated_at::text as updated_at, "
             "       u.user_id as author_id, u.name as author_name "
             "FROM seagull_schema.wall_posts wp "
             "JOIN seagull_schema.users u ON wp.author_id = u.user_id "
