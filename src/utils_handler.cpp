@@ -61,6 +61,16 @@ std::optional<std::string> ValidatePassword(std::string_view password,
   return std::nullopt;
 }
 
+std::size_t Utf8CharLength(std::string_view value) {
+  std::size_t count = 0;
+  for (unsigned char c : value) {
+    if ((c & 0xC0) != 0x80) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 bool TryParseInt(std::string_view source, int& out_value) {
   try {
     const std::string source_copy(source);

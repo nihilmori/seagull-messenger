@@ -633,6 +633,58 @@ async def test_wall_delete_own_post(service_client, pgsql):
     assert delete_resp.json()['deleted'] is True
 
 
+# Регистрация: имя длиннее 100 символов -> 400.
+async def test_register_name_too_long(service_client, pgsql):
+    response = await _register_user(service_client, 'long_name_user', name='X' * 101)
+    assert response.status_code == 400
+
+
+# Регистрация: логин длиннее 50 символов -> 400.
+async def test_register_login_too_long(service_client, pgsql):
+    response = await _register_user(service_client, 'a' * 51)
+    assert response.status_code == 400
+
+
+# Профиль: имя длиннее 100 символов -> 400.
+async def test_update_user_name_too_long(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'len_name_upd')).json()['user_id']
+    response = await service_client.patch(
+        '/api/user/profile',
+        json={'user_id': user_id, 'name': 'Y' * 101},
+    )
+    assert response.status_code == 400
+
+
+# Профиль: логин длиннее 50 символов -> 400.
+async def test_update_user_login_too_long(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'len_login_upd')).json()['user_id']
+    response = await service_client.patch(
+        '/api/user/profile',
+        json={'user_id': user_id, 'login': 'z' * 51},
+    )
+    assert response.status_code == 400
+
+
+# Профиль: bio длиннее 80 символов -> 400.
+async def test_update_user_bio_too_long(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'len_bio_upd')).json()['user_id']
+    response = await service_client.patch(
+        '/api/user/profile',
+        json={'user_id': user_id, 'bio': 'b' * 81},
+    )
+    assert response.status_code == 400
+
+
+# Профиль: bio ровно 80 символов проходит.
+async def test_update_user_bio_at_limit(service_client, pgsql):
+    user_id = (await _register_user(service_client, 'bio_at_limit')).json()['user_id']
+    response = await service_client.patch(
+        '/api/user/profile',
+        json={'user_id': user_id, 'bio': 'b' * 80},
+    )
+    assert response.status_code == 200
+
+
 # Стена: посторонний пользователь не может удалить пост -> 403.
 async def test_wall_delete_post_forbidden(service_client, pgsql):
     owner_id = (await _register_user(service_client, 'wall_fb_owner')).json()['user_id']

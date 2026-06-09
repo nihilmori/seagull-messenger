@@ -40,6 +40,12 @@ std::string RegisterHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'login' is required");
   }
 
+  if (utils_handler::Utf8CharLength(login) > 50) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "Field 'login' must not exceed 50 characters");
+  }
+
   if (!utils_handler::IsCorrectPassword(password)) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("Field 'password' is not correct");
@@ -50,10 +56,16 @@ std::string RegisterHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'name' is required");
   }
 
-  if (name.length() < 2) {
+  const auto name_chars = utils_handler::Utf8CharLength(name);
+  if (name_chars < 2) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson(
         "Field 'name' must be at least 2 characters");
+  }
+  if (name_chars > 100) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "Field 'name' must not exceed 100 characters");
   }
 
   const auto salt = utils_handler::GenerateSalt();
