@@ -76,16 +76,39 @@ ListView {
         readonly property bool isOutgoing: modelData.sender_id === root.currentUserId
 
         Rectangle {
-            id: bubble
+            id: avatarCircle
+            width: 32
+            height: 32
+            radius: 16
+            color: Theme.hoverSubtle
+            border.color: Theme.border
+            visible: !delegateRoot.isOutgoing
+            
+            anchors.left: parent.left
+            anchors.leftMargin: 8
+            anchors.bottom: bubble.bottom
 
+            Text {
+                anchors.centerIn: parent
+                text: root.senderName(modelData.sender_id) ? root.senderName(modelData.sender_id).charAt(0).toUpperCase() : "?"
+                font.pixelSize: 14
+                font.bold: true
+                color: Theme.textMuted
+            }
+        }
+
+        Rectangle {
+            id: bubble
             radius: 10
             color: delegateRoot.isOutgoing ? Theme.bubbleOut : Theme.bubbleIn
             border.color: delegateRoot.isOutgoing ? Theme.bubbleOutBorder : Theme.bubbleInBorder
 
             anchors.top: parent.top
-            anchors.margins: 4
+            anchors.topMargin: 4
             anchors.right: delegateRoot.isOutgoing ? parent.right : undefined
-            anchors.left: delegateRoot.isOutgoing ? undefined : parent.left
+            anchors.rightMargin: 4
+            anchors.left: delegateRoot.isOutgoing ? undefined : avatarCircle.right
+            anchors.leftMargin: 8
 
             implicitWidth: Math.min(parent.width * 0.78, Math.max(messageText.implicitWidth, timeText.implicitWidth) + 24)
             implicitHeight: messageColumn.implicitHeight + 16

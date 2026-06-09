@@ -57,45 +57,67 @@ Rectangle {
 
                 property int peerUserId: modelData.peer_user_id || 0
 
-                Column {
+                RowLayout {
                     anchors.fill: parent
                     anchors.margins: 10
-                    spacing: 4
-
-                    RowLayout {
-                        spacing: 6
-                        width: parent.width
+                    spacing: 12
+                    Rectangle {
+                        width: 48
+                        height: 48
+                        radius: 24
+                        color: root.currentChatId === modelData.chat_id ? "white" : Theme.hoverSubtle
+                        opacity: 0.9
 
                         Text {
-                            text: modelData.display_name || modelData.name || ("Чат #" + modelData.chat_id)
-                            color: Theme.textPrimary
+                            anchors.centerIn: parent
+                            property string displayName: modelData.display_name || modelData.name || "?"
+                            text: displayName.charAt(0).toUpperCase()
+                            font.pixelSize: 18
                             font.bold: true
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Rectangle {
-                            visible: modelData.unread_count > 0
-                            radius: 9
-                            color: Theme.accent
-                            Layout.minimumWidth: 18
-                            Layout.preferredHeight: 18
-                            Layout.alignment: Qt.AlignVCenter
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.unread_count
-                                color: "#ffffff"
-                                font.pixelSize: 11
-                            }
+                            color: root.currentChatId === modelData.chat_id ? Theme.accent : Theme.textMuted
                         }
                     }
 
-                    Text {
-                        text: modelData.last_message_at || "Нет сообщений"
-                        color: Theme.textMuted
-                        font.pixelSize: 12
-                        elide: Text.ElideRight
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Text {
+                                text: modelData.display_name || modelData.name || ("Чат #" + modelData.chat_id)
+                                color: root.currentChatId === modelData.chat_id ? Theme.bubbleOutText : Theme.textPrimary
+                                font.bold: true
+                                font.pixelSize: 14
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+
+                            Rectangle {
+                                visible: modelData.unread_count > 0
+                                radius: 9
+                                color: Theme.accent
+                                Layout.minimumWidth: 18
+                                Layout.preferredHeight: 18
+                                Layout.alignment: Qt.AlignVCenter
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.unread_count
+                                    color: "#ffffff"
+                                    font.pixelSize: 11
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: modelData.last_message_at || "Нет сообщений"
+                            color: root.currentChatId === modelData.chat_id ? Theme.bubbleOutText : Theme.textMuted
+                            font.pixelSize: 12
+                            elide: Text.ElideRight
+                        }
                     }
                 }
 

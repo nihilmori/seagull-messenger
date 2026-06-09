@@ -1734,6 +1734,7 @@ Window {
                         editingMessageId: window.editingMessageId
                         errorText: window.errorText
                         statusText: window.statusText
+                        visible: appState.currentChatId > 0 || receiverText !== ""
                         onSendClicked: sendCurrentMessage()
                         onCancelEditClicked: cancelEditingMessage()
                     }
