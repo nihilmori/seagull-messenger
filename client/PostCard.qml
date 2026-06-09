@@ -31,7 +31,6 @@ Rectangle {
         interval: 2000
         onTriggered: {
             pendingDelete = false
-            deleteButton.color = "#9ca3af"
             deleteButton.scale = 1.0
         }
     }
@@ -139,7 +138,7 @@ Rectangle {
                 radius: 18
                 visible: root.isOwnPost || root.isWallOwner
 
-                color: (deleteArea.containsMouse || pendingDelete) ? "#ef4444" : "#9ca3af"
+                color: (deleteArea.containsMouse || pendingDelete) ? Theme.error : Theme.textFaint
 
                 scale: pendingDelete ? 1.15 : 1.0
                 Behavior on scale { NumberAnimation { duration: 100 } }

@@ -225,8 +225,8 @@ ScrollView {
 
         background: Rectangle {
             radius: 16
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         header: Rectangle {
@@ -239,7 +239,7 @@ ScrollView {
                 text: "Редактировать профиль"
                 font.pixelSize: 18
                 font.bold: true
-                color: "#111827"
+                color: Theme.textPrimary
             }
         }
 
@@ -256,6 +256,10 @@ ScrollView {
                 text: root.userInfo.name || ""
                 Layout.fillWidth: true
                 padding: 12
+
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
+
                 background: Rectangle {
                     radius: 10
                     color: Theme.inputBg
@@ -272,6 +276,10 @@ ScrollView {
                 Layout.minimumHeight: 80
                 wrapMode: Text.WordWrap
                 padding: 12
+
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
+
                 background: Rectangle {
                     radius: 10
                     color: Theme.inputBg
@@ -291,7 +299,7 @@ ScrollView {
 
             Text {
                 text: editProfileDialog.errorText
-                color: "#dc2626"
+                color: Theme.error
                 font.pixelSize: 12
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
@@ -316,13 +324,13 @@ ScrollView {
                     onClicked: editProfileDialog.close()
                     contentItem: Text {
                         text: parent.text
-                        color: "#6b7280"
+                        color: Theme.textMuted
                         horizontalAlignment: Text.AlignHCenter
                     }
                     background: Rectangle {
                         radius: 10
-                        color: parent.hovered ? "#f3f4f6" : "#ffffff"
-                        border.color: "#e5e7eb"
+                        color: parent.hovered ? Theme.hover : "transparent"
+                        border.color: Theme.border
                     }
                 }
 
@@ -331,12 +339,12 @@ ScrollView {
                     onClicked: editProfileDialog.saveProfile()
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Theme.bubbleOutText
                         horizontalAlignment: Text.AlignHCenter
                     }
                     background: Rectangle {
                         radius: 10
-                        color: parent.hovered ? "#2563eb" : "#3b82f6"
+                        color: parent.hovered ? Theme.accent : Theme.bubbleOut
                     }
                 }
             }

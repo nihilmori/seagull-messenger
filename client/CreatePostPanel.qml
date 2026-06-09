@@ -71,7 +71,7 @@ Rectangle {
 
                 contentItem: Text {
                     text: parent.text
-                    color: parent.enabled ? Theme.accent : Theme.textFaint
+                    color: parent.enabled ? Theme.bubbleOutText : Theme.textFaint
                 }
 
                 onClicked: {

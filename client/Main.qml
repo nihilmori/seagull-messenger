@@ -566,8 +566,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -714,7 +714,7 @@ Window {
 
                     Text {
                         text: createChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                         visible: createChatDialog.errorText.length > 0
@@ -729,8 +729,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: createChatDialog.close()
                         }
@@ -817,8 +822,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -853,7 +858,7 @@ Window {
 
                     Text {
                         text: renameChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -867,8 +872,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: renameChatDialog.submitRenameChat()
                         }
@@ -878,8 +889,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: renameChatDialog.close()
                         }
@@ -954,8 +970,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -990,7 +1006,7 @@ Window {
 
                     Text {
                         text: addUserDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -1004,8 +1020,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: addUserDialog.submitAddUser()
                         }
@@ -1015,8 +1037,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: addUserDialog.close()
                         }
@@ -1091,8 +1118,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -1127,7 +1154,7 @@ Window {
 
                     Text {
                         text: removeUserDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -1152,8 +1179,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: removeUserDialog.close()
                         }
@@ -1196,8 +1228,8 @@ Window {
             height: 420
             background: Rectangle {
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
             }
 
             ColumnLayout {
@@ -1208,7 +1240,7 @@ Window {
                 Text {
                     text: appState.currentChatName
                     font.bold: true
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -1226,8 +1258,8 @@ Window {
                         width: parent.width
                         height: 40
                         radius: 8
-                        color: "#f9fafb"
-                        border.color: "#e5e7eb"
+                        color: Theme.inputBg
+                        border.color: Theme.border
 
                         RowLayout {
                             anchors.fill: parent
@@ -1236,14 +1268,14 @@ Window {
 
                             Text {
                                 text: modelData.name || "Без имени"
-                                color: "#111827"
+                                color: Theme.textPrimary
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
 
                             Text {
                                 text: "#" + modelData.user_id
-                                color: "#6b7280"
+                                color: Theme.textMuted
                             }
                         }
 
@@ -1254,8 +1286,8 @@ Window {
                             clip: true
                             background: Rectangle {
                                 radius: 12
-                                color: "#ffffff"
-                                border.color: "#e5e7eb"
+                                color: Theme.bgSecondary
+                                border.color: Theme.border
                             }
 
                             MenuItem {
@@ -1331,8 +1363,13 @@ Window {
                         padding: 10
                         background: Rectangle {
                             radius: 12
-                            color: "#f3f4f6"
-                            border.color: "#e5e7eb"
+                            color: Theme.hoverSubtle
+                            border.color: Theme.border
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: Theme.textPrimary
+                            horizontalAlignment: Text.AlignHCenter
                         }
                         onClicked: participantsDialog.close()
                     }
@@ -1372,8 +1409,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -1397,7 +1434,7 @@ Window {
 
                     Text {
                         text: leaveChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -1411,8 +1448,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: {
                                 leaveChatDialog.errorText = ""
@@ -1436,8 +1479,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: leaveChatDialog.close()
                         }
