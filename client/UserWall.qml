@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 import "ApiClient.js" as WebApi
 
 ScrollView {
@@ -11,9 +12,20 @@ ScrollView {
 
     signal postCreated(string content)
     signal postDeleted(int postId)
+    signal writeToUser(int userId)
 
     property var postsModel: []
     property var userInfo: ({})
+    property string searchQuery: ""
+
+    readonly property var filteredPostsModel: {
+        const list = postsModel || []
+        const q = (searchQuery || "").trim().toLowerCase()
+        if (!q) return list
+        return list.filter(function(p) {
+            return p && String(p.content || "").toLowerCase().indexOf(q) >= 0
+        })
+    }
 
     function loadUserProfile() {
         if (root.userId <= 0) return
@@ -58,7 +70,6 @@ ScrollView {
             if (status === 200) {
                 root.postDeleted(postId)
                 refresh()
-                if (typeof setStatus === "function") setStatus("Пост удалён")
             } else {
                 if (typeof setError === "function") setError(response.error || "Не удалось удалить пост")
             }
@@ -82,6 +93,7 @@ ScrollView {
             postsCount: root.postsModel.length
             isOwnProfile: root.userId === (typeof appState !== "undefined" ? appState.currentUserId : -1)
             onEditProfileClicked: editProfileDialog.open()
+            onWriteMessageClicked: root.writeToUser(root.userId)
         }
 
         CreatePostPanel {
@@ -96,13 +108,13 @@ ScrollView {
             text: "Посты"
             font.pixelSize: 16
             font.bold: true
-            color: "#111827"
+            color: Theme.textPrimary
             Layout.fillWidth: true
             Layout.topMargin: 8
         }
 
         Repeater {
-            model: root.postsModel
+            model: root.filteredPostsModel
 
             delegate: PostCard {
                 required property var modelData
@@ -138,7 +150,7 @@ ScrollView {
             Text {
                 anchors.centerIn: parent
                 text: "Загрузка..."
-                color: "#6b7280"
+                color: Theme.textMuted
             }
         }
 
@@ -151,7 +163,24 @@ ScrollView {
             Text {
                 anchors.centerIn: parent
                 text: "Нет постов. Будьте первым!"
-                color: "#9ca3af"
+                color: Theme.textFaint
+                font.pixelSize: 14
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 60
+            color: "transparent"
+            visible: !root.isLoading
+                     && root.postsModel.length > 0
+                     && root.filteredPostsModel.length === 0
+                     && root.searchQuery.trim().length > 0
+
+            Text {
+                anchors.centerIn: parent
+                text: "По запросу ничего не найдено"
+                color: Theme.textFaint
                 font.pixelSize: 14
             }
         }
@@ -196,8 +225,8 @@ ScrollView {
 
         background: Rectangle {
             radius: 16
-            color: "#ffffff"
-            border.color: "#e5e7eb"
+            color: Theme.bgSecondary
+            border.color: Theme.border
         }
 
         header: Rectangle {
@@ -210,7 +239,7 @@ ScrollView {
                 text: "Редактировать профиль"
                 font.pixelSize: 18
                 font.bold: true
-                color: "#111827"
+                color: Theme.textPrimary
             }
         }
 
@@ -227,10 +256,14 @@ ScrollView {
                 text: root.userInfo.name || ""
                 Layout.fillWidth: true
                 padding: 12
+
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
+
                 background: Rectangle {
                     radius: 10
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
                 }
                 Keys.onReturnPressed: editProfileDialog.saveProfile()
             }
@@ -243,10 +276,14 @@ ScrollView {
                 Layout.minimumHeight: 80
                 wrapMode: Text.WordWrap
                 padding: 12
+
+                color: Theme.textPrimary
+                placeholderTextColor: Theme.textFaint
+
                 background: Rectangle {
                     radius: 10
-                    color: "#f9fafb"
-                    border.color: "#e5e7eb"
+                    color: Theme.inputBg
+                    border.color: Theme.border
                 }
                 Keys.onPressed: function(event) {
                     if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -262,7 +299,7 @@ ScrollView {
 
             Text {
                 text: editProfileDialog.errorText
-                color: "#dc2626"
+                color: Theme.error
                 font.pixelSize: 12
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
@@ -287,13 +324,13 @@ ScrollView {
                     onClicked: editProfileDialog.close()
                     contentItem: Text {
                         text: parent.text
-                        color: "#6b7280"
+                        color: Theme.textMuted
                         horizontalAlignment: Text.AlignHCenter
                     }
                     background: Rectangle {
                         radius: 10
-                        color: parent.hovered ? "#f3f4f6" : "#ffffff"
-                        border.color: "#e5e7eb"
+                        color: parent.hovered ? Theme.hover : "transparent"
+                        border.color: Theme.border
                     }
                 }
 
@@ -302,12 +339,12 @@ ScrollView {
                     onClicked: editProfileDialog.saveProfile()
                     contentItem: Text {
                         text: parent.text
-                        color: "white"
+                        color: Theme.bubbleOutText
                         horizontalAlignment: Text.AlignHCenter
                     }
                     background: Rectangle {
                         radius: 10
-                        color: parent.hovered ? "#2563eb" : "#3b82f6"
+                        color: parent.hovered ? Theme.accent : Theme.bubbleOut
                     }
                 }
             }

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -13,12 +14,13 @@ Rectangle {
     property bool isOwnProfile: false
 
     signal editProfileClicked()
+    signal writeMessageClicked()
 
     Layout.fillWidth: true
     height: 140
     radius: 12
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     RowLayout {
         anchors.fill: parent
@@ -29,15 +31,15 @@ Rectangle {
             width: 70
             height: 70
             radius: 35
-            color: "#f3f4f6"
-            border.color: "#e5e7eb"
+            color: Theme.hoverSubtle
+            border.color: Theme.border
 
             Text {
                 anchors.centerIn: parent
                 text: root.userName ? root.userName.charAt(0).toUpperCase() : "?"
                 font.pixelSize: 28
                 font.bold: true
-                color: "#6b7280"
+                color: Theme.textMuted
             }
         }
 
@@ -53,7 +55,7 @@ Rectangle {
                     text: root.userName
                     font.pixelSize: 20
                     font.bold: true
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -61,7 +63,7 @@ Rectangle {
                 Text {
                     text: "@" + root.userLogin
                     font.pixelSize: 13
-                    color: "#6b7280"
+                    color: Theme.textMuted
                     visible: root.userLogin !== ""
                 }
             }
@@ -69,7 +71,7 @@ Rectangle {
             Text {
                 text: root.userBio || "Нет описания"
                 font.pixelSize: 13
-                color: "#374151"
+                color: Theme.textBody
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 visible: text !== ""
@@ -78,7 +80,7 @@ Rectangle {
             Text {
                 text: root.postsCount + " " + (root.postsCount === 1 ? "пост" : "постов")
                 font.pixelSize: 12
-                color: "#6b7280"
+                color: Theme.textMuted
             }
         }
 
@@ -89,15 +91,33 @@ Rectangle {
             padding: 8
             background: Rectangle {
                 radius: 20
-                color: "#f3f4f6"
-                border.color: "#e5e7eb"
+                color: Theme.hoverSubtle
+                border.color: Theme.border
             }
             contentItem: Text {
                 text: parent.text
-                color: "#374151"
+                color: Theme.textBody
                 horizontalAlignment: Text.AlignHCenter
             }
             onClicked: root.editProfileClicked()
+        }
+
+        Button {
+            visible: !root.isOwnProfile
+            text: "Написать"
+            implicitWidth: 110
+            padding: 8
+            background: Rectangle {
+                radius: 20
+                color: Theme.bubbleOut
+                border.color: Theme.bubbleOutBorder
+            }
+            contentItem: Text {
+                text: parent.text
+                color: Theme.bubbleOutText
+                horizontalAlignment: Text.AlignHCenter
+            }
+            onClicked: root.writeMessageClicked()
         }
     }
 }

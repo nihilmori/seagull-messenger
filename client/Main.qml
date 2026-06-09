@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import SeagullClient
 import "ApiClient.js" as WebApi
 
 Window {
@@ -10,12 +11,12 @@ Window {
     height: 760
     visible: true
     title: qsTr("Seagull Client")
-    color: "#f5f7fb"
+    color: Theme.bgPrimary
 
-    palette.text: "#111827"
-    palette.windowText: "#111827"
-    palette.buttonText: "#111827"
-    palette.placeholderText: "#9ca3af"
+    palette.text: Theme.textPrimary
+    palette.windowText: Theme.textPrimary
+    palette.buttonText: Theme.textPrimary
+    palette.placeholderText: Theme.textFaint
     palette.highlightedText: "#ffffff"
 
     QtObject {
@@ -40,6 +41,7 @@ Window {
     property var searchMessagesModel: []
     property string searchQuery: ""
     property string currentMode: "chat"
+    onCurrentModeChanged: clearStatus()
     property var typingUsersModel: []
 
     signal openUserWall(int userId)
@@ -80,6 +82,7 @@ Window {
         function onCurrentChatIdChanged() {
             typingUsersModel = []
             refreshTyping()
+            clearStatus()
         }
     }
 
@@ -348,7 +351,7 @@ Window {
 
         const receiverId = Number.parseInt(composer.receiverText, 10)
         if (!receiverId || receiverId <= 0) {
-            setError("Укажите user_id получателя для личного чата")
+            setError("Сначала выберите чат")
             return
         }
 
@@ -446,7 +449,7 @@ Window {
 
         Rectangle {
             anchors.fill: parent
-            color: "#f5f7fb"
+            color: Theme.bgPrimary
         }
 
         TopBar {
@@ -480,7 +483,54 @@ Window {
             }
 
             property string errorText: ""
+            property var selectedParticipants: []
+            property var dialogSearchResults: []
             onRejected: createChatDialog.close()
+            onClosed: {
+                chatNameField.text = ""
+                participantSearchField.text = ""
+                createChatDialog.selectedParticipants = []
+                createChatDialog.dialogSearchResults = []
+                createChatDialog.errorText = ""
+            }
+
+            function isParticipantSelected(userId) {
+                const list = createChatDialog.selectedParticipants || []
+                for (let i = 0; i < list.length; i++) {
+                    if (Number(list[i].user_id) === Number(userId)) return true
+                }
+                return false
+            }
+
+            function toggleParticipant(userId, name) {
+                const id = Number(userId)
+                if (!id || id <= 0 || id === appState.currentUserId) return
+                const list = (createChatDialog.selectedParticipants || []).slice()
+                const idx = list.findIndex(function(u) { return Number(u.user_id) === id })
+                if (idx >= 0) {
+                    list.splice(idx, 1)
+                } else {
+                    list.push({ user_id: id, name: String(name || "") })
+                }
+                createChatDialog.selectedParticipants = list
+            }
+
+            function runDialogSearch(query) {
+                const q = (query || "").trim()
+                if (q.length < 2) {
+                    createChatDialog.dialogSearchResults = []
+                    return
+                }
+                WebApi.ApiClient.searchUsers(q, function(status, response) {
+                    if (status === 200 && response && response.users) {
+                        createChatDialog.dialogSearchResults = response.users.filter(function(u) {
+                            return Number(u.user_id) !== appState.currentUserId
+                        })
+                    } else {
+                        createChatDialog.dialogSearchResults = []
+                    }
+                })
+            }
 
             function submitCreateChat() {
                 createChatDialog.errorText = ""
@@ -490,17 +540,16 @@ Window {
                     return
                 }
 
-                const participants = parseParticipants(participantsField.text)
-                if (participants === null || participants.length === 0) {
-                    createChatDialog.errorText = "Введите корректные user_id участников"
+                const list = createChatDialog.selectedParticipants || []
+                if (list.length === 0) {
+                    createChatDialog.errorText = "Выберите хотя бы одного участника"
                     return
                 }
+                const participants = list.map(function(u) { return Number(u.user_id) })
 
                 WebApi.ApiClient.createGroupChat(name, appState.currentUserId, participants, function(status, response) {
                     if (status === 201) {
                         createChatDialog.close()
-                        chatNameField.text = ""
-                        participantsField.text = ""
                         if (response.chat_id) {
                             appState.currentChatId = response.chat_id
                         }
@@ -517,8 +566,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -547,8 +596,8 @@ Window {
                     }
 
                     TextField {
-                        id: participantsField
-                        placeholderText: "user_id участников (через запятую)"
+                        id: participantSearchField
+                        placeholderText: "Поиск пользователей по имени"
                         Layout.fillWidth: true
                         padding: 10
                         background: Rectangle {
@@ -556,13 +605,119 @@ Window {
                             color: "#f9fafb"
                             border.color: "#e5e7eb"
                         }
+                        onTextChanged: createChatDialog.runDialogSearch(text)
+                    }
+
+                    ListView {
+                        id: dialogSearchList
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 160
+                        clip: true
+                        model: createChatDialog.dialogSearchResults
+                        visible: model && model.length > 0
+                        spacing: 4
+
+                        delegate: Rectangle {
+                            required property var modelData
+                            readonly property bool isSelected: createChatDialog.isParticipantSelected(modelData.user_id)
+
+                            width: ListView.view.width
+                            height: 36
+                            radius: 8
+                            color: isSelected ? "#dbeafe" : (rowMouseArea.containsMouse ? "#f3f4f6" : "#f9fafb")
+                            border.color: isSelected ? "#93c5fd" : "#e5e7eb"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 8
+
+                                Text {
+                                    text: parent.parent.isSelected ? "✓" : "+"
+                                    color: parent.parent.isSelected ? "#1d4ed8" : "#9ca3af"
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    Layout.preferredWidth: 14
+                                }
+
+                                Text {
+                                    text: modelData.name + " (#" + modelData.user_id + ")"
+                                    color: "#111827"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            MouseArea {
+                                id: rowMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: createChatDialog.toggleParticipant(modelData.user_id, modelData.name)
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: participantSearchField.text.length >= 2
+                                 && (!createChatDialog.dialogSearchResults || createChatDialog.dialogSearchResults.length === 0)
+                        text: "Никого не найдено"
+                        color: "#6b7280"
+                        font.pixelSize: 12
+                        Layout.fillWidth: true
+                    }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        visible: createChatDialog.selectedParticipants && createChatDialog.selectedParticipants.length > 0
+
+                        Repeater {
+                            model: createChatDialog.selectedParticipants
+
+                            Rectangle {
+                                required property var modelData
+                                radius: 14
+                                color: "#dbeafe"
+                                border.color: "#93c5fd"
+                                implicitWidth: chipRow.implicitWidth + 16
+                                implicitHeight: 28
+
+                                RowLayout {
+                                    id: chipRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    Text {
+                                        text: parent.parent.modelData.name
+                                        color: "#1f2937"
+                                        font.pixelSize: 12
+                                    }
+
+                                    Text {
+                                        text: "✕"
+                                        color: "#1d4ed8"
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: createChatDialog.toggleParticipant(parent.modelData.user_id, parent.modelData.name)
+                                }
+                            }
+                        }
                     }
 
                     Text {
                         text: createChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
+                        visible: createChatDialog.errorText.length > 0
                     }
 
                     RowLayout {
@@ -574,8 +729,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: createChatDialog.close()
                         }
@@ -662,8 +822,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -698,7 +858,7 @@ Window {
 
                     Text {
                         text: renameChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -712,8 +872,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: renameChatDialog.submitRenameChat()
                         }
@@ -723,8 +889,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: renameChatDialog.close()
                         }
@@ -799,8 +970,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -835,7 +1006,7 @@ Window {
 
                     Text {
                         text: addUserDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -849,8 +1020,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: addUserDialog.submitAddUser()
                         }
@@ -860,8 +1037,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: addUserDialog.close()
                         }
@@ -936,8 +1118,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -972,7 +1154,7 @@ Window {
 
                     Text {
                         text: removeUserDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -997,8 +1179,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: removeUserDialog.close()
                         }
@@ -1041,8 +1228,8 @@ Window {
             height: 420
             background: Rectangle {
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
             }
 
             ColumnLayout {
@@ -1053,7 +1240,7 @@ Window {
                 Text {
                     text: appState.currentChatName
                     font.bold: true
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -1071,8 +1258,8 @@ Window {
                         width: parent.width
                         height: 40
                         radius: 8
-                        color: "#f9fafb"
-                        border.color: "#e5e7eb"
+                        color: Theme.inputBg
+                        border.color: Theme.border
 
                         RowLayout {
                             anchors.fill: parent
@@ -1081,14 +1268,14 @@ Window {
 
                             Text {
                                 text: modelData.name || "Без имени"
-                                color: "#111827"
+                                color: Theme.textPrimary
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
 
                             Text {
                                 text: "#" + modelData.user_id
-                                color: "#6b7280"
+                                color: Theme.textMuted
                             }
                         }
 
@@ -1099,8 +1286,8 @@ Window {
                             clip: true
                             background: Rectangle {
                                 radius: 12
-                                color: "#ffffff"
-                                border.color: "#e5e7eb"
+                                color: Theme.bgSecondary
+                                border.color: Theme.border
                             }
 
                             MenuItem {
@@ -1144,10 +1331,16 @@ Window {
 
                         MouseArea {
                             anchors.fill: parent
-                            acceptedButtons: Qt.RightButton
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: function(mouse) {
                                 if (mouse.button === Qt.RightButton) {
                                     participantMenu.popup()
+                                    return
+                                }
+                                if (mouse.button === Qt.LeftButton && modelData && modelData.user_id) {
+                                    participantsDialog.close()
+                                    window.openUserWall(modelData.user_id)
                                 }
                             }
                         }
@@ -1170,8 +1363,13 @@ Window {
                         padding: 10
                         background: Rectangle {
                             radius: 12
-                            color: "#f3f4f6"
-                            border.color: "#e5e7eb"
+                            color: Theme.hoverSubtle
+                            border.color: Theme.border
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: Theme.textPrimary
+                            horizontalAlignment: Text.AlignHCenter
                         }
                         onClicked: participantsDialog.close()
                     }
@@ -1211,8 +1409,8 @@ Window {
             contentItem: Rectangle {
                 anchors.fill: parent
                 radius: 12
-                color: "#ffffff"
-                border.color: "#e5e7eb"
+                color: Theme.bgSecondary
+                border.color: Theme.border
                 clip: true
 
                 ColumnLayout {
@@ -1236,7 +1434,7 @@ Window {
 
                     Text {
                         text: leaveChatDialog.errorText
-                        color: "#dc2626"
+                        color: Theme.error
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
                     }
@@ -1250,8 +1448,14 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#dbeafe"
-                                border.color: "#93c5fd"
+                                color: Theme.bubbleOut
+                                border.color: Theme.bubbleOutBorder
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.bubbleOutText
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: {
                                 leaveChatDialog.errorText = ""
@@ -1275,8 +1479,13 @@ Window {
                             padding: 10
                             background: Rectangle {
                                 radius: 12
-                                color: "#f3f4f6"
-                                border.color: "#e5e7eb"
+                                color: Theme.hoverSubtle
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: Theme.textMuted
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             onClicked: leaveChatDialog.close()
                         }
@@ -1376,13 +1585,11 @@ Window {
                                 })
 
                                 if (existing && existing.chat_id) {
+                                    currentMode = "chat"
                                     composer.receiverText = ""
                                     selectChat(existing.chat_id)
                                 } else {
-                                    if (appState.currentChatId > 0) {
-                                        appState.currentChatId = -1
-                                    }
-                                    composer.receiverText = String(userId)
+                                    window.openUserWall(targetUserId)
                                 }
                                 sidebar.searchText = ""
                                 loadSearchUsers("")
@@ -1395,7 +1602,7 @@ Window {
             anchors.right: parent.right
             anchors.top: topBar.bottom
             anchors.bottom: parent.bottom
-            color: "#f5f7fb"
+            color: Theme.bgPrimary
 
             RowLayout {
                 id: modeSwitcher
@@ -1414,12 +1621,12 @@ Window {
                     onClicked: currentMode = "chat"
                     background: Rectangle {
                         radius: 20
-                        color: parent.checked ? "#dbeafe" : "#f3f4f6"
-                        border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
+                        color: parent.checked ? Theme.bubbleOut : Theme.hoverSubtle
+                        border.color: parent.checked ? Theme.bubbleOutBorder : Theme.border
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: parent.checked ? "#2563eb" : "#6b7280"
+                        color: parent.checked ? Theme.accent : Theme.textMuted
                     }
                 }
 
@@ -1434,12 +1641,12 @@ Window {
                     }
                     background: Rectangle {
                         radius: 20
-                        color: parent.checked ? "#dbeafe" : "#f3f4f6"
-                        border.color: parent.checked ? "#93c5fd" : "#e5e7eb"
+                        color: parent.checked ? Theme.bubbleOut : Theme.hoverSubtle
+                        border.color: parent.checked ? Theme.bubbleOutBorder : Theme.border
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: parent.checked ? "#2563eb" : "#6b7280"
+                        color: parent.checked ? Theme.accent : Theme.textMuted
                     }
                 }
 
@@ -1451,10 +1658,12 @@ Window {
                     visible: currentMode !== "chat"
                     Layout.preferredWidth: 200
                     padding: 8
+                    color: Theme.textPrimary
+                    placeholderTextColor: Theme.textFaint
                     background: Rectangle {
                         radius: 20
-                        color: "#f9fafb"
-                        border.color: "#e5e7eb"
+                        color: Theme.inputBg
+                        border.color: Theme.border
                     }
                     onTextChanged: {
                         if (currentMode !== "chat") {
@@ -1481,7 +1690,7 @@ Window {
                         titleText: appState.currentChatId > 0 ? appState.currentChatName : "Выберите чат или начните личный чат"
                         subtitleText: appState.currentChatId > 0
                                       ? (appState.currentChatType === 'private' ? "" : ("Участников: " + participantsModel.length))
-                                      : "Чтобы начать личный чат, введите user_id получателя"
+                                      : ""
                         showMenu: appState.currentChatId > 0
                                   && appState.currentChatType.toLowerCase() === "group"
                         typingUsers: appState.currentChatId > 0 ? window.typingUsersModel : []
@@ -1573,6 +1782,7 @@ Window {
                         editingMessageId: window.editingMessageId
                         errorText: window.errorText
                         statusText: window.statusText
+                        visible: appState.currentChatId > 0 || receiverText !== ""
                         onSendClicked: sendCurrentMessage()
                         onCancelEditClicked: cancelEditingMessage()
                     }
@@ -1591,6 +1801,8 @@ Window {
                         WebApi.ApiClient.createPost(currentWallOwnerId, appState.currentUserId, content, function(status, response) {
                             console.log("Create post response status:", status)
                             if (status === 201) {
+                                wallSearchField.text = ""
+                                userWall.searchQuery = ""
                                 setStatus("Пост опубликован на стене пользователя")
                                 userWall.refresh()
                             } else {
@@ -1602,6 +1814,30 @@ Window {
                     onPostDeleted: function(postId) {
                         console.log("Post deleted:", postId)
                         userWall.refresh()
+                    }
+
+                    onWriteToUser: function(userId) {
+                        if (!userId || userId <= 0 || userId === appState.currentUserId) {
+                            return
+                        }
+                        currentMode = "chat"
+                        clearStatus()
+                        let existingChatId = -1
+                        const chats = chatsModel || []
+                        for (let i = 0; i < chats.length; i++) {
+                            const chat = chats[i]
+                            if (chat && Number(chat.peer_user_id) === userId) {
+                                existingChatId = Number(chat.chat_id)
+                                break
+                            }
+                        }
+                        if (existingChatId > 0) {
+                            appState.currentChatId = existingChatId
+                            composer.receiverText = ""
+                        } else {
+                            appState.currentChatId = -1
+                            composer.receiverText = String(userId)
+                        }
                     }
                 }
             }

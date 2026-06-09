@@ -64,15 +64,35 @@ std::string UpdateUserHandler::HandleRequestThrow(
     return utils_handler::MakeErrorJson("Field 'name' must not be empty");
   }
 
-  if (has_name && name.length() < 2) {
+  if (has_name) {
+    const auto chars = utils_handler::Utf8CharLength(name);
+    if (chars < 2) {
+      response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return utils_handler::MakeErrorJson(
+          "Field 'name' must be at least 2 characters");
+    }
+    if (chars > 100) {
+      response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return utils_handler::MakeErrorJson(
+          "Field 'name' must not exceed 100 characters");
+    }
+  }
+
+  if (has_bio && utils_handler::Utf8CharLength(bio) > 80) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson(
-        "Field 'name' must be at least 2 characters");
+        "Field 'bio' must not exceed 80 characters");
   }
 
   if (has_login && utils_handler::IsBlank(new_login)) {
     response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
     return utils_handler::MakeErrorJson("Field 'login' must not be empty");
+  }
+
+  if (has_login && utils_handler::Utf8CharLength(new_login) > 50) {
+    response.SetStatus(userver::server::http::HttpStatus::kBadRequest);
+    return utils_handler::MakeErrorJson(
+        "Field 'login' must not exceed 50 characters");
   }
 
   if (has_new_password) {

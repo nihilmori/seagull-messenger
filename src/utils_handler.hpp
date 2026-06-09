@@ -24,6 +24,8 @@ std::optional<std::string> ValidatePassword(
 
 bool TryParseInt(std::string_view source, int& out_value);
 
+std::size_t Utf8CharLength(std::string_view value);
+
 std::string GenerateSalt(std::size_t length = 16);
 
 }  // namespace myservice::utils_handler

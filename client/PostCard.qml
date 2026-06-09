@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import SeagullClient
 
 Rectangle {
     id: root
@@ -20,8 +21,8 @@ Rectangle {
     Layout.fillWidth: true
     height: column.implicitHeight + 24
     radius: 12
-    color: "#ffffff"
-    border.color: "#e5e7eb"
+    color: Theme.bgSecondary
+    border.color: Theme.border
 
     property bool pendingDelete: false
 
@@ -30,7 +31,6 @@ Rectangle {
         interval: 2000
         onTriggered: {
             pendingDelete = false
-            deleteButton.color = "#9ca3af"
             deleteButton.scale = 1.0
         }
     }
@@ -38,7 +38,7 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: "#f8fafc"
+        color: Theme.hoverSubtle
         opacity: cardMouseArea.containsMouse ? 0.5 : 0
         Behavior on opacity { NumberAnimation { duration: 150 } }
     }
@@ -64,14 +64,14 @@ Rectangle {
                 width: 40
                 height: 40
                 radius: 20
-                color: "#f3f4f6"
+                color: Theme.hoverSubtle
 
                 Text {
                     anchors.centerIn: parent
                     text: root.authorName ? root.authorName.charAt(0).toUpperCase() : "?"
                     font.pixelSize: 18
                     font.bold: true
-                    color: "#6b7280"
+                    color: Theme.textMuted
                 }
 
                 MouseArea {
@@ -89,7 +89,7 @@ Rectangle {
                     text: root.authorName
                     font.bold: true
                     font.pixelSize: 15
-                    color: "#111827"
+                    color: Theme.textPrimary
                     elide: Text.ElideRight
                     Layout.fillWidth: true
 
@@ -107,26 +107,26 @@ Rectangle {
                     Text {
                         text: "@" + root.authorLogin
                         font.pixelSize: 12
-                        color: "#6b7280"
+                        color: Theme.textMuted
                     }
 
                     Text {
                         text: "•"
                         font.pixelSize: 12
-                        color: "#9ca3af"
+                        color: Theme.textFaint
                     }
 
                     Text {
                         text: formatDate(root.createdAt)
                         font.pixelSize: 12
-                        color: "#9ca3af"
+                        color: Theme.textFaint
                     }
                 }
 
                 Text {
                     text: formatDate(root.createdAt)
                     font.pixelSize: 12
-                    color: "#9ca3af"
+                    color: Theme.textFaint
                     visible: root.authorLogin === ""
                 }
             }
@@ -138,7 +138,7 @@ Rectangle {
                 radius: 18
                 visible: root.isOwnPost || root.isWallOwner
 
-                color: (deleteArea.containsMouse || pendingDelete) ? "#ef4444" : "#9ca3af"
+                color: (deleteArea.containsMouse || pendingDelete) ? Theme.error : Theme.textFaint
 
                 scale: pendingDelete ? 1.15 : 1.0
                 Behavior on scale { NumberAnimation { duration: 100 } }
@@ -187,7 +187,7 @@ Rectangle {
             text: root.content
             wrapMode: Text.WordWrap
             font.pixelSize: 14
-            color: "#1f2937"
+            color: Theme.textBody
             Layout.fillWidth: true
             lineHeight: 1.4
         }
@@ -200,36 +200,23 @@ Rectangle {
     function formatDate(dateValue) {
         if (!dateValue) return ""
 
-        var dateStr = String(dateValue).trim()
-        if (!dateStr) return ""
+        var dateStr = String(dateValue)
 
-        if (dateStr.match(/^\d+$/)) {
-            var ts = Number(dateStr)
-            if (dateStr.length <= 10) {
-                ts *= 1000
-            }
-            var dateFromTs = new Date(ts)
-            if (!isNaN(dateFromTs.getTime())) {
-                return pad2(dateFromTs.getDate()) + "." + pad2(dateFromTs.getMonth() + 1) + "." +
-                    dateFromTs.getFullYear() + " " + pad2(dateFromTs.getHours()) + ":" + pad2(dateFromTs.getMinutes())
-            }
-        }
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+            var parts = dateStr.split(" ")
+            var dateParts = parts[0].split("-")
+            var timeParts = parts[1] ? parts[1].split(":") : []
 
-        var match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/)
-        if (match) {
-            var formatted = match[3] + "." + match[2] + "." + match[1]
-            if (match[4] && match[5]) {
-                formatted += " " + match[4] + ":" + match[5]
+            var formatted = dateParts[2] + "." + dateParts[1] + "." + dateParts[0]
+            if (timeParts.length >= 2) {
+                formatted += " " + timeParts[0] + ":" + timeParts[1]
             }
             return formatted
         }
 
-        var normalized = dateStr.replace(" ", "T")
-        var parsed = Date.parse(normalized)
-        if (!isNaN(parsed)) {
-            var dateFromParsed = new Date(parsed)
-            return pad2(dateFromParsed.getDate()) + "." + pad2(dateFromParsed.getMonth() + 1) + "." +
-                dateFromParsed.getFullYear() + " " + pad2(dateFromParsed.getHours()) + ":" + pad2(dateFromParsed.getMinutes())
+        if (dateStr.includes("��")) {
+            var now = new Date()
+            return now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear()
         }
 
         return ""
