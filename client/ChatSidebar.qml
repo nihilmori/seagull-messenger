@@ -207,10 +207,6 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }
-            background: Rectangle {
-                radius: 8
-                color: parent.hovered ? "#e5e7eb" : "transparent"
-            }
             onTriggered: {
                 if (searchContextMenu.userId > 0) {
                     window.openUserWall(searchContextMenu.userId)
@@ -248,10 +244,6 @@ Rectangle {
                 color: "#111827"
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: 8
-                color: parent.hovered ? "#e5e7eb" : "transparent"
             }
             onTriggered: {
                 if (chatContextMenu.peerUserId > 0) {
